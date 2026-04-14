@@ -1,0 +1,702 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Car,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react'
+import { cn, formatDate, formatDateShort, formatTime, calculateTotal } from '@/lib/utils'
+import {
+  PRICING,
+  ADDON_PRICING,
+  ADDON_DESCRIPTIONS,
+  type AvailabilitySlot,
+  type BookingFormData,
+  type ServiceType,
+  type AddonType,
+  type VehicleType,
+} from '@/lib/types'
+import { addDays, format, startOfDay, isSameDay, parseISO } from 'date-fns'
+
+type Step = 'calendar' | 'form' | 'success'
+
+const EMPTY_FORM: BookingFormData = {
+  client_name: '',
+  client_phone: '',
+  client_address: '',
+  car_make: '',
+  car_model: '',
+  car_year: '',
+  vehicle_type: 'sedan_coupe',
+  dirt_rating: 5,
+  services: [],
+  addons: [],
+  has_water: null,
+  has_power: null,
+  message: '',
+}
+
+export default function BookPage() {
+  const [step, setStep] = useState<Step>('calendar')
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(true)
+  const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [form, setForm] = useState<BookingFormData>(EMPTY_FORM)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [calendarOffset, setCalendarOffset] = useState(0) // 0 = week 1, 1 = week 2
+
+  const today = startOfDay(new Date())
+  const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
+  const week = days.slice(calendarOffset * 7, calendarOffset * 7 + 7)
+
+  // Fetch available slots
+  useEffect(() => {
+    async function load() {
+      setLoadingSlots(true)
+      try {
+        const res = await fetch('/api/slots')
+        const json = await res.json()
+        setSlots(json.slots ?? [])
+      } catch {
+        setSlots([])
+      } finally {
+        setLoadingSlots(false)
+      }
+    }
+    load()
+  }, [])
+
+  const slotsForDate = useCallback(
+    (dateStr: string) => slots.filter((s) => s.slot_date === dateStr),
+    [slots]
+  )
+
+  const availableDates = [...new Set(slots.map((s) => s.slot_date))]
+
+  function toggleService(service: ServiceType) {
+    setForm((f) => {
+      if (service === 'Both') {
+        return { ...f, services: f.services.includes('Both') ? [] : ['Both'] }
+      }
+      const without = f.services.filter((s) => s !== 'Both' && s !== service)
+      return {
+        ...f,
+        services: f.services.includes(service) ? without : [...without, service],
+      }
+    })
+  }
+
+  function toggleAddon(addon: AddonType) {
+    setForm((f) => ({
+      ...f,
+      addons: f.addons.includes(addon)
+        ? f.addons.filter((a) => a !== addon)
+        : [...f.addons, addon],
+    }))
+  }
+
+  const total = form.services.length
+    ? calculateTotal(form.vehicle_type, form.services, form.addons)
+    : 0
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedSlot) return
+    if (!form.services.length) {
+      setError('Please select at least one service.')
+      return
+    }
+    if (form.has_water === null || form.has_power === null) {
+      setError('Please specify water and power access.')
+      return
+    }
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          slot_id: selectedSlot.id,
+          slot_date: selectedSlot.slot_date,
+          slot_time: selectedSlot.slot_time,
+        }),
+      })
+
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error || 'Something went wrong. Please try again.')
+        return
+      }
+
+      setStep('success')
+    } catch {
+      setError('Network error. Please check your connection and try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ── SUCCESS ──────────────────────────────────────────────────────────────
+  if (step === 'success') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 pt-20">
+        <div className="max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-brand/10 border border-brand/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 size={40} className="text-brand" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-white mb-3">Request Received!</h1>
+          <p className="text-gray-400 text-lg leading-relaxed mb-2">
+            Your booking request has been sent. You&apos;ll get a text once it&apos;s
+            confirmed or denied — usually within a few hours.
+          </p>
+          {selectedSlot && (
+            <p className="text-brand font-semibold text-sm mb-8">
+              {formatDate(selectedSlot.slot_date)} at {formatTime(selectedSlot.slot_time)}
+            </p>
+          )}
+          <button
+            onClick={() => {
+              setStep('calendar')
+              setSelectedSlot(null)
+              setSelectedDate(null)
+              setForm(EMPTY_FORM)
+            }}
+            className="text-gray-400 hover:text-white text-sm underline transition-colors"
+          >
+            Book another appointment
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── CALENDAR ─────────────────────────────────────────────────────────────
+  if (step === 'calendar') {
+    return (
+      <div className="min-h-screen px-4 pt-24 pb-16">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <Image
+              src="/logo/logo-wo-text.jpeg"
+              alt="Marlow's Detailing"
+              width={60}
+              height={60}
+              className="rounded-lg mx-auto mb-4"
+            />
+            <h1 className="text-3xl font-extrabold text-white mb-2">Book Your Appointment</h1>
+            <p className="text-gray-400">Pick an available date to get started.</p>
+          </div>
+
+          {/* Week toggle */}
+          <div className="flex items-center justify-between mb-5">
+            <button
+              onClick={() => setCalendarOffset(0)}
+              disabled={calendarOffset === 0}
+              className={cn(
+                'flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-full transition-colors',
+                calendarOffset === 0
+                  ? 'text-gray-600 cursor-not-allowed'
+                  : 'text-gray-300 hover:text-white hover:bg-[#1a1a1a]'
+              )}
+            >
+              <ChevronLeft size={16} /> This week
+            </button>
+            <p className="text-gray-500 text-sm font-medium">
+              {calendarOffset === 0 ? 'Week 1' : 'Week 2'}
+            </p>
+            <button
+              onClick={() => setCalendarOffset(1)}
+              disabled={calendarOffset === 1}
+              className={cn(
+                'flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-full transition-colors',
+                calendarOffset === 1
+                  ? 'text-gray-600 cursor-not-allowed'
+                  : 'text-gray-300 hover:text-white hover:bg-[#1a1a1a]'
+              )}
+            >
+              Next week <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {loadingSlots ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={32} className="animate-spin text-brand" />
+            </div>
+          ) : (
+            <>
+              {/* Day buttons */}
+              <div className="grid grid-cols-7 gap-2 mb-8">
+                {week.map((day) => {
+                  const dateStr = format(day, 'yyyy-MM-dd')
+                  const hasSlots = availableDates.includes(dateStr)
+                  const isSelected = selectedDate === dateStr
+                  const isToday = isSameDay(day, today)
+
+                  return (
+                    <button
+                      key={dateStr}
+                      onClick={() => {
+                        if (!hasSlots) return
+                        setSelectedDate(dateStr)
+                        setSelectedSlot(null)
+                      }}
+                      disabled={!hasSlots}
+                      className={cn(
+                        'relative flex flex-col items-center py-3 rounded-xl border transition-all',
+                        isSelected
+                          ? 'bg-brand border-brand text-white'
+                          : hasSlots
+                          ? 'bg-[#111] border-[#2a2a2a] hover:border-brand/60 cursor-pointer'
+                          : 'bg-[#0d0d0d] border-[#1a1a1a] cursor-not-allowed opacity-40'
+                      )}
+                    >
+                      <span className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">
+                        {format(day, 'EEE')}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-lg font-bold',
+                          isSelected ? 'text-white' : hasSlots ? 'text-white' : 'text-gray-600'
+                        )}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {isToday && !isSelected && (
+                        <span className="absolute bottom-1.5 w-1 h-1 bg-brand rounded-full" />
+                      )}
+                      {hasSlots && !isSelected && (
+                        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand rounded-full" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Time slots */}
+              {selectedDate && (
+                <div>
+                  <p className="text-white font-semibold mb-4">
+                    Available times on{' '}
+                    <span className="text-brand">{formatDateShort(selectedDate)}</span>
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+                    {slotsForDate(selectedDate).map((slot) => {
+                      const isSelected = selectedSlot?.id === slot.id
+                      return (
+                        <button
+                          key={slot.id}
+                          onClick={() => setSelectedSlot(slot)}
+                          className={cn(
+                            'py-3 px-4 rounded-xl border text-sm font-semibold transition-all',
+                            isSelected
+                              ? 'bg-brand border-brand text-white'
+                              : 'bg-[#111] border-[#2a2a2a] text-gray-300 hover:border-brand/60 hover:text-white'
+                          )}
+                        >
+                          {formatTime(slot.slot_time)}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {selectedSlot && (
+                    <button
+                      onClick={() => setStep('form')}
+                      className="w-full bg-brand hover:bg-brand-light text-white font-bold py-4 rounded-full transition-colors"
+                    >
+                      Continue with {formatDateShort(selectedDate)} at{' '}
+                      {formatTime(selectedSlot.slot_time)}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {!availableDates.some((d) =>
+                week.some((day) => format(day, 'yyyy-MM-dd') === d)
+              ) && (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">No openings this week.</p>
+                  {calendarOffset === 0 && (
+                    <button
+                      onClick={() => setCalendarOffset(1)}
+                      className="mt-3 text-brand hover:text-brand-light text-sm underline"
+                    >
+                      Check next week
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── BOOKING FORM ─────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen px-4 pt-24 pb-16">
+      <div className="max-w-2xl mx-auto">
+        {/* Back button + slot summary */}
+        <div className="flex items-center gap-3 mb-8">
+          <button
+            onClick={() => setStep('calendar')}
+            className="flex items-center gap-1 text-gray-400 hover:text-white text-sm transition-colors"
+          >
+            <ChevronLeft size={16} /> Back
+          </button>
+          {selectedSlot && (
+            <div className="bg-brand/10 border border-brand/30 text-brand text-sm font-semibold px-4 py-1.5 rounded-full">
+              {formatDateShort(selectedSlot.slot_date)} at{' '}
+              {formatTime(selectedSlot.slot_time)}
+            </div>
+          )}
+        </div>
+
+        <h1 className="text-2xl font-extrabold text-white mb-1">Your Details</h1>
+        <p className="text-gray-400 text-sm mb-8">
+          Fill out the form below and we&apos;ll be in touch to confirm.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Contact info */}
+          <Section title="Contact Information">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field
+                label="Full Name"
+                required
+                value={form.client_name}
+                onChange={(v) => setForm((f) => ({ ...f, client_name: v }))}
+                placeholder="Jake Marlow"
+              />
+              <Field
+                label="Phone Number"
+                required
+                type="tel"
+                value={form.client_phone}
+                onChange={(v) => setForm((f) => ({ ...f, client_phone: v }))}
+                placeholder="(832) 555-1234"
+              />
+            </div>
+            <Field
+              label="Service Address"
+              required
+              value={form.client_address}
+              onChange={(v) => setForm((f) => ({ ...f, client_address: v }))}
+              placeholder="123 Main St, Houston TX 77001"
+            />
+          </Section>
+
+          {/* Vehicle info */}
+          <Section title="Vehicle">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Field
+                label="Year"
+                value={form.car_year}
+                onChange={(v) => setForm((f) => ({ ...f, car_year: v }))}
+                placeholder="2020"
+                maxLength={4}
+              />
+              <Field
+                label="Make"
+                required
+                value={form.car_make}
+                onChange={(v) => setForm((f) => ({ ...f, car_make: v }))}
+                placeholder="Toyota"
+              />
+              <Field
+                label="Model"
+                required
+                value={form.car_model}
+                onChange={(v) => setForm((f) => ({ ...f, car_model: v }))}
+                placeholder="Camry"
+              />
+            </div>
+
+            {/* Vehicle type */}
+            <div>
+              <label className="text-sm text-gray-400 block mb-2">Vehicle Type *</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['sedan_coupe', 'suv_truck'] as VehicleType[]).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, vehicle_type: type }))}
+                    className={cn(
+                      'py-3 px-4 rounded-xl border text-sm font-semibold transition-all flex items-center gap-2 justify-center',
+                      form.vehicle_type === type
+                        ? 'bg-brand border-brand text-white'
+                        : 'bg-[#111] border-[#2a2a2a] text-gray-300 hover:border-brand/50'
+                    )}
+                  >
+                    <Car size={16} />
+                    {type === 'sedan_coupe' ? 'Sedan / Coupe' : 'SUV / Truck'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dirt rating */}
+            <div>
+              <label className="text-sm text-gray-400 block mb-2">
+                How dirty is it?{' '}
+                <span className="text-brand font-bold text-base">{form.dirt_rating}/10</span>
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={form.dirt_rating}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, dirt_rating: parseInt(e.target.value) }))
+                }
+                className="w-full accent-brand"
+              />
+              <div className="flex justify-between text-xs text-gray-600 mt-1">
+                <span>1 — Barely dirty</span>
+                <span>10 — Disaster</span>
+              </div>
+            </div>
+          </Section>
+
+          {/* Services */}
+          <Section title="Services">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {(['Interior Detail', 'Exterior Detail', 'Both'] as ServiceType[]).map(
+                (service) => {
+                  const price = PRICING[form.vehicle_type][service]
+                  const selected = form.services.includes(service)
+                  return (
+                    <button
+                      key={service}
+                      type="button"
+                      onClick={() => toggleService(service)}
+                      className={cn(
+                        'py-3 px-4 rounded-xl border text-sm font-semibold transition-all flex flex-col items-center gap-1',
+                        selected
+                          ? 'bg-brand border-brand text-white'
+                          : 'bg-[#111] border-[#2a2a2a] text-gray-300 hover:border-brand/50'
+                      )}
+                    >
+                      <span>{service}</span>
+                      <span className={cn('text-xs font-normal', selected ? 'text-brand-muted' : 'text-gray-500')}>
+                        ${price}
+                      </span>
+                    </button>
+                  )
+                }
+              )}
+            </div>
+
+            {/* Add-ons */}
+            <div>
+              <p className="text-sm text-gray-400 mb-3">Add-Ons (optional)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(Object.entries(ADDON_PRICING) as [AddonType, number][]).map(
+                  ([addon, price]) => {
+                    const selected = form.addons.includes(addon)
+                    return (
+                      <button
+                        key={addon}
+                        type="button"
+                        onClick={() => toggleAddon(addon)}
+                        className={cn(
+                          'py-3 px-4 rounded-xl border text-sm text-left transition-all',
+                          selected
+                            ? 'bg-brand/10 border-brand text-white'
+                            : 'bg-[#111] border-[#2a2a2a] text-gray-300 hover:border-brand/50'
+                        )}
+                      >
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className="font-semibold">{addon}</span>
+                          <span className={cn('text-xs', selected ? 'text-brand' : 'text-gray-500')}>
+                            +${price}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">{ADDON_DESCRIPTIONS[addon]}</p>
+                      </button>
+                    )
+                  }
+                )}
+              </div>
+            </div>
+
+            {/* Total estimate */}
+            {total > 0 && (
+              <div className="bg-brand/5 border border-brand/20 rounded-xl px-4 py-3 flex justify-between items-center">
+                <span className="text-gray-400 text-sm">Estimated Total</span>
+                <span className="text-brand font-bold text-xl">${total}</span>
+              </div>
+            )}
+          </Section>
+
+          {/* Utilities */}
+          <Section title="Water & Power Access">
+            <p className="text-gray-400 text-sm mb-4">
+              Let us know what&apos;s available at the service location.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ToggleField
+                label="Water Access"
+                hint="Outdoor spigot or hose nearby"
+                value={form.has_water}
+                onChange={(v) => setForm((f) => ({ ...f, has_water: v }))}
+              />
+              <ToggleField
+                label="Power Access"
+                hint="Outdoor outlet or extension cord"
+                value={form.has_power}
+                onChange={(v) => setForm((f) => ({ ...f, has_power: v }))}
+              />
+            </div>
+          </Section>
+
+          {/* Notes */}
+          <Section title="Anything Else?">
+            <textarea
+              value={form.message}
+              onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+              placeholder="Gate code, parking instructions, specific concerns about the vehicle..."
+              rows={4}
+              className="w-full bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a] focus:border-brand rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 resize-none outline-none transition-colors"
+            />
+          </Section>
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+              <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-brand hover:bg-brand-light disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-full transition-colors flex items-center justify-center gap-2 text-base"
+          >
+            {submitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Submitting...
+              </>
+            ) : (
+              'Submit Booking Request'
+            )}
+          </button>
+          <p className="text-center text-gray-600 text-xs">
+            You&apos;ll receive a text confirmation once your booking is approved.
+          </p>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-5 space-y-4">
+      <h2 className="text-white font-bold text-base">{title}</h2>
+      {children}
+    </div>
+  )
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  required,
+  placeholder,
+  type = 'text',
+  maxLength,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  required?: boolean
+  placeholder?: string
+  type?: string
+  maxLength?: number
+}) {
+  return (
+    <div>
+      <label className="text-sm text-gray-400 block mb-1.5">
+        {label} {required && <span className="text-brand">*</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className="w-full bg-[#0a0a0a] border border-[#2a2a2a] hover:border-[#3a3a3a] focus:border-brand rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 outline-none transition-colors"
+      />
+    </div>
+  )
+}
+
+function ToggleField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string
+  hint: string
+  value: boolean | null
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-4">
+      <p className="text-white text-sm font-semibold mb-0.5">{label}</p>
+      <p className="text-gray-500 text-xs mb-3">{hint}</p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(true)}
+          className={cn(
+            'flex-1 py-2 rounded-lg text-sm font-semibold transition-all border',
+            value === true
+              ? 'bg-brand border-brand text-white'
+              : 'bg-[#111] border-[#2a2a2a] text-gray-400 hover:border-brand/50'
+          )}
+        >
+          Yes
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(false)}
+          className={cn(
+            'flex-1 py-2 rounded-lg text-sm font-semibold transition-all border',
+            value === false
+              ? 'bg-[#2a1a1a] border-red-500/50 text-red-400'
+              : 'bg-[#111] border-[#2a2a2a] text-gray-400 hover:border-red-500/30'
+          )}
+        >
+          No
+        </button>
+      </div>
+    </div>
+  )
+}
