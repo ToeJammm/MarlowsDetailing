@@ -393,7 +393,7 @@ export default function BookPage() {
                 required
                 value={form.client_name}
                 onChange={(v) => setForm((f) => ({ ...f, client_name: v }))}
-                placeholder="Jake Marlow"
+                placeholder="Jane Doe"
               />
               <Field
                 label="Phone Number"
