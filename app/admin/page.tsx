@@ -7,10 +7,13 @@ import { Loader2, LogOut, Plus, Trash2, Lock } from 'lucide-react'
 import { cn, formatTime } from '@/lib/utils'
 import type { AvailabilitySlot } from '@/lib/types'
 
-const TIME_SLOTS = [
-  '08:00', '09:00', '10:00', '11:00',
-  '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-]
+const WEEKDAY_SLOTS = ['17:00']
+const WEEKEND_SLOTS = ['11:00', '13:00', '15:00', '17:00']
+
+function getSlotsForDate(dateStr: string): string[] {
+  const day = new Date(dateStr + 'T00:00:00').getDay() // 0=Sun, 6=Sat
+  return day === 0 || day === 6 ? WEEKEND_SLOTS : WEEKDAY_SLOTS
+}
 
 export default function AdminPage() {
   const [password, setPassword] = useState('')
@@ -231,8 +234,8 @@ export default function AdminPage() {
                 {format(addDays(today, days.findIndex((d) => format(d, 'yyyy-MM-dd') === selectedDate)), 'EEEE, MMMM d')}
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {TIME_SLOTS.map((time) => {
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {getSlotsForDate(selectedDate).map((time) => {
                 const status = slotStatus(selectedDate, time)
                 const key = `${selectedDate}_${time}`
                 const isSaving = savingSlot === key
