@@ -613,7 +613,7 @@ export default function BookPage() {
                 <p className="text-amber-300 text-sm font-semibold">Mobile service requires water and power</p>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   Since you don&apos;t have both available, you&apos;re welcome to bring your vehicle to us instead.
-                  Please note there is <span className="text-white font-medium">no indoor waiting area</span> — you&apos;re welcome to hang out outside in the garage while we work.
+                  There is <span className="text-white font-medium">no indoor waiting area</span>, but we&apos;ll have a chair and water bottles ready for you outside in the garage while we work.
                 </p>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -623,7 +623,7 @@ export default function BookPage() {
                     className="mt-0.5 accent-brand w-4 h-4 shrink-0"
                   />
                   <span className="text-gray-300 text-sm">
-                    I understand I need to bring my vehicle to Marlow&apos;s Detailing and that there is no indoor waiting area.
+                    I understand I need to bring my vehicle to Marlow&apos;s Detailing and that there is no indoor waiting area (a chair and water bottles will be provided outside).
                   </span>
                 </label>
               </div>
