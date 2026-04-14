@@ -248,20 +248,23 @@ export default function HomePage() {
           </div>
 
           {/* Utility note */}
-          <div className="mt-14 bg-[#111] border border-[#2a2a2a] rounded-xl p-6 flex flex-col sm:flex-row gap-4 items-start">
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                <Droplets size={16} className="text-brand shrink-0" />
-                <span>
-                  <span className="text-white font-medium">Water access</span> — helpful but not always required. Let us know when booking.
-                </span>
+          <div className="mt-14 bg-[#111] border border-brand/20 rounded-xl p-6 space-y-4">
+            <p className="text-white font-semibold text-sm">Important — Before You Book</p>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              For us to come to <span className="text-white font-medium">your location</span>, you must be able to provide access to both a water source (outdoor spigot or hose) and a power outlet. These are required to perform the detail on-site.
+            </p>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              <span className="text-white font-medium">No water or power at your location?</span> No problem — you&apos;re welcome to bring your vehicle to us instead. Just mention it in the notes when booking and we&apos;ll coordinate a drop-off time.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 pt-1">
+              <div className="flex items-center gap-2 text-sm">
+                <Droplets size={15} className="text-brand shrink-0" />
+                <span className="text-gray-400">Water source required for mobile service</span>
               </div>
-            </div>
-            <div className="flex items-center gap-2 text-gray-400 text-sm shrink-0">
-              <Zap size={16} className="text-brand shrink-0" />
-              <span>
-                <span className="text-white font-medium">Power access</span> — required for some services. Specify when booking.
-              </span>
+              <div className="flex items-center gap-2 text-sm">
+                <Zap size={15} className="text-brand shrink-0" />
+                <span className="text-gray-400">Power outlet required for mobile service</span>
+              </div>
             </div>
           </div>
         </div>
