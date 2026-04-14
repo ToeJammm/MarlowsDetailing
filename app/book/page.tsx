@@ -9,8 +9,11 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Camera,
+  X,
 } from 'lucide-react'
 import { cn, formatDate, formatDateShort, formatTime, calculateTotal, slotsNeeded, getRequiredSlots } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 import {
   PRICING,
   ADDON_PRICING,
@@ -41,6 +44,15 @@ const EMPTY_FORM: BookingFormData = {
   message: '',
 }
 
+function getRequiredPhotos(services: ServiceType[]): string[] {
+  const needsInterior = services.includes('Interior Detail') || services.includes('Both')
+  const needsExterior = services.includes('Exterior Detail') || services.includes('Both')
+  const required: string[] = []
+  if (needsInterior) required.push('Front Seats', 'Back Seats', 'Trunk')
+  if (needsExterior) required.push('Front of Vehicle', 'Rear of Vehicle')
+  return required
+}
+
 export default function BookPage() {
   const [step, setStep] = useState<Step>('calendar')
   const [slots, setSlots] = useState<AvailabilitySlot[]>([])
@@ -51,6 +63,7 @@ export default function BookPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [agreesDropoff, setAgreesDropoff] = useState(false)
+  const [photos, setPhotos] = useState<Record<string, File>>({})
   const [calendarOffset, setCalendarOffset] = useState(0) // 0 = week 1, 1 = week 2
 
   const today = startOfDay(new Date())
@@ -138,10 +151,44 @@ export default function BookPage() {
       return
     }
 
+    // Validate photos if dirtiness is 7+
+    const requiredPhotos = getRequiredPhotos(form.services)
+    if (form.dirt_rating >= 7 && form.services.length > 0) {
+      const missing = requiredPhotos.filter((p) => !photos[p])
+      if (missing.length > 0) {
+        setError(`Please upload the following photo${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`)
+        return
+      }
+    }
+
     setSubmitting(true)
     setError(null)
 
     try {
+      // Upload photos to Supabase Storage
+      let photoUrls: string[] = []
+      if (form.dirt_rating >= 7 && Object.keys(photos).length > 0) {
+        const supabase = createClient()
+        const uploadId = crypto.randomUUID()
+
+        for (const [label, file] of Object.entries(photos)) {
+          const ext = file.name.split('.').pop() || 'jpg'
+          const path = `${uploadId}/${label.toLowerCase().replace(/\s+/g, '-')}.${ext}`
+
+          const { error: uploadError } = await supabase.storage
+            .from('booking-photos')
+            .upload(path, file)
+
+          if (uploadError) throw new Error(`Photo upload failed: ${uploadError.message}`)
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('booking-photos')
+            .getPublicUrl(path)
+
+          photoUrls.push(publicUrl)
+        }
+      }
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,6 +198,7 @@ export default function BookPage() {
           slot_date: selectedSlot.slot_date,
           slot_time: selectedSlot.slot_time,
           extra_slot_ids: extraSlotIds.length ? extraSlotIds : null,
+          photo_urls: photoUrls.length ? photoUrls : null,
         }),
       })
 
@@ -161,8 +209,8 @@ export default function BookPage() {
       }
 
       setStep('success')
-    } catch {
-      setError('Network error. Please check your connection and try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -491,6 +539,34 @@ export default function BookPage() {
             </div>
           </Section>
 
+          {/* Photo uploads — required when dirtiness is 7+ and services are selected */}
+          {form.dirt_rating >= 7 && form.services.length > 0 && (
+            <Section title={`Vehicle Photos Required (${form.dirt_rating}/10 dirtiness)`}>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Because your vehicle is rated <span className="text-white font-medium">{form.dirt_rating}/10</span>, we need photos so we can prepare properly. Please upload a clear photo for each angle below.
+              </p>
+              <div className="space-y-3">
+                {getRequiredPhotos(form.services).map((label) => (
+                  <PhotoUpload
+                    key={label}
+                    label={label}
+                    file={photos[label] ?? null}
+                    onChange={(file) =>
+                      setPhotos((p) => {
+                        if (!file) {
+                          const next = { ...p }
+                          delete next[label]
+                          return next
+                        }
+                        return { ...p, [label]: file }
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </Section>
+          )}
+
           {/* Services */}
           <Section title="Services">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -765,6 +841,60 @@ function ToggleField({
           No
         </button>
       </div>
+    </div>
+  )
+}
+
+function PhotoUpload({
+  label,
+  file,
+  onChange,
+}: {
+  label: string
+  file: File | null
+  onChange: (file: File | null) => void
+}) {
+  const preview = file ? URL.createObjectURL(file) : null
+
+  return (
+    <div>
+      <label className="text-sm text-gray-400 block mb-1.5">
+        {label} <span className="text-brand">*</span>
+      </label>
+      {file ? (
+        <div className="flex items-center gap-3 bg-brand/5 border border-brand/30 rounded-xl p-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={preview!} alt={label} className="w-14 h-14 object-cover rounded-lg shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">{file.name}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="text-gray-500 hover:text-white transition-colors p-1"
+            aria-label="Remove photo"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ) : (
+        <label className="flex items-center gap-3 bg-[#0a0a0a] border border-[#2a2a2a] hover:border-brand/40 rounded-xl p-3 cursor-pointer transition-colors">
+          <div className="w-10 h-10 bg-[#1a1a1a] rounded-lg flex items-center justify-center shrink-0">
+            <Camera size={18} className="text-brand" />
+          </div>
+          <span className="text-gray-400 text-sm">Tap to upload photo</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) onChange(f)
+            }}
+          />
+        </label>
+      )}
     </div>
   )
 }

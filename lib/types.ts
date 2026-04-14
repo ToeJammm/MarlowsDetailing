@@ -32,6 +32,7 @@ export interface Booking {
   has_power: boolean
   message: string | null
   extra_slot_ids: string[] | null
+  photo_urls: string[] | null
   status: BookingStatus
   created_at: string
 }

@@ -33,6 +33,9 @@ export async function sendBookingNotification(booking: Booking) {
   const yearPrefix = booking.car_year ? `${booking.car_year} ` : ''
   const addonLine = booking.addons?.length ? `\nAdd-ons: ${booking.addons.join(', ')}` : ''
   const notesLine = booking.message ? `\nNotes: "${booking.message}"` : ''
+  const photosLine = booking.photo_urls?.length
+    ? `\nPhotos (${booking.photo_urls.length}): ${booking.photo_urls.join('\n')}`
+    : ''
 
   const message = [
     `NEW BOOKING - MARLOW'S DETAILING`,
@@ -44,7 +47,7 @@ export async function sendBookingNotification(booking: Booking) {
     `Vehicle: ${yearPrefix}${booking.car_make} ${booking.car_model} (${vehicleLabel})`,
     `Dirtiness: ${booking.dirt_rating}/10`,
     `Services: ${booking.services.join(', ')}${addonLine}`,
-    `Water: ${booking.has_water ? 'Yes' : 'No'} | Power: ${booking.has_power ? 'Yes' : 'No'}${notesLine}`,
+    `Water: ${booking.has_water ? 'Yes' : 'No'} | Power: ${booking.has_power ? 'Yes' : 'No'}${notesLine}${photosLine}`,
     `Est. Total: $${total}`,
     ``,
     `APPROVE: ${approveUrl}`,

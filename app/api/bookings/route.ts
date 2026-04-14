@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
       slot_date: string
       slot_time: string
       extra_slot_ids?: string[] | null
+      photo_urls?: string[] | null
     } = await req.json()
 
     // Basic validation
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
         slot_date: body.slot_date,
         slot_time: body.slot_time,
         extra_slot_ids: body.extra_slot_ids?.length ? body.extra_slot_ids : null,
+        photo_urls: body.photo_urls?.length ? body.photo_urls : null,
         client_name: body.client_name.trim(),
         client_phone: toE164(body.client_phone),
         client_address: body.client_address.trim(),
