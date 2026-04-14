@@ -75,7 +75,7 @@ export default function AdminPage() {
     const key = `${date}_${time}`
     setSavingSlot(key)
 
-    const existing = slots.find((s) => s.slot_date === date && s.slot_time === time)
+    const existing = slots.find((s) => s.slot_date === date && s.slot_time.startsWith(time))
 
     try {
       if (existing) {
@@ -117,7 +117,7 @@ export default function AdminPage() {
   }
 
   const slotStatus = (date: string, time: string) => {
-    const slot = slots.find((s) => s.slot_date === date && s.slot_time === time)
+    const slot = slots.find((s) => s.slot_date === date && s.slot_time.startsWith(time))
     if (!slot) return 'empty'
     if (slot.is_booked) return 'booked'
     return 'available'
