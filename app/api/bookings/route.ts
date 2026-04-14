@@ -6,8 +6,12 @@ import type { BookingFormData } from '@/lib/types'
 
 export async function POST(req: NextRequest) {
   try {
-    const body: BookingFormData & { slot_id: string; slot_date: string; slot_time: string } =
-      await req.json()
+    const body: BookingFormData & {
+      slot_id: string
+      slot_date: string
+      slot_time: string
+      extra_slot_ids?: string[] | null
+    } = await req.json()
 
     // Basic validation
     const required = [
@@ -27,19 +31,19 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient()
+    const allSlotIds = [body.slot_id, ...(body.extra_slot_ids ?? [])]
 
-    // Verify the slot is still available
-    const { data: slot, error: slotError } = await supabase
+    // Verify ALL required slots are still available
+    const { data: availableSlots, error: slotError } = await supabase
       .from('availability_slots')
-      .select('*')
-      .eq('id', body.slot_id)
+      .select('id')
+      .in('id', allSlotIds)
       .eq('is_available', true)
       .eq('is_booked', false)
-      .single()
 
-    if (slotError || !slot) {
+    if (slotError || !availableSlots || availableSlots.length !== allSlotIds.length) {
       return NextResponse.json(
-        { error: 'This time slot is no longer available. Please choose another.' },
+        { error: 'One or more time slots are no longer available. Please go back and choose again.' },
         { status: 409 }
       )
     }
@@ -51,6 +55,7 @@ export async function POST(req: NextRequest) {
         slot_id: body.slot_id,
         slot_date: body.slot_date,
         slot_time: body.slot_time,
+        extra_slot_ids: body.extra_slot_ids?.length ? body.extra_slot_ids : null,
         client_name: body.client_name.trim(),
         client_phone: toE164(body.client_phone),
         client_address: body.client_address.trim(),
@@ -74,11 +79,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
 
-    // Mark the slot as booked
+    // Mark ALL slots as booked
     await supabase
       .from('availability_slots')
       .update({ is_booked: true })
-      .eq('id', body.slot_id)
+      .in('id', allSlotIds)
 
     // Send SMS notification to owner
     try {

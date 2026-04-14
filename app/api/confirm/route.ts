@@ -65,12 +65,15 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // If denied, free the slot back up
-  if (newStatus === 'denied' && booking.slot_id) {
-    await supabase
-      .from('availability_slots')
-      .update({ is_booked: false })
-      .eq('id', booking.slot_id)
+  // If denied, free all booked slots back up
+  if (newStatus === 'denied') {
+    const allSlotIds = [booking.slot_id, ...(booking.extra_slot_ids ?? [])].filter(Boolean)
+    if (allSlotIds.length > 0) {
+      await supabase
+        .from('availability_slots')
+        .update({ is_booked: false })
+        .in('id', allSlotIds)
+    }
   }
 
   // Send SMS to client

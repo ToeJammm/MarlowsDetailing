@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react'
-import { cn, formatDate, formatDateShort, formatTime, calculateTotal } from '@/lib/utils'
+import { cn, formatDate, formatDateShort, formatTime, calculateTotal, slotsNeeded, getRequiredSlots } from '@/lib/utils'
 import {
   PRICING,
   ADDON_PRICING,
@@ -106,6 +106,16 @@ export default function BookPage() {
     ? calculateTotal(form.vehicle_type, form.services, form.addons)
     : 0
 
+  // Multi-slot logic — recalculates whenever services/addons/selectedSlot change
+  const neededCount = selectedSlot
+    ? slotsNeeded(form.services, form.addons, selectedSlot.slot_time.substring(0, 5))
+    : 1
+  const { slots: requiredSlots, error: slotConflictError } =
+    selectedSlot && form.services.length > 0
+      ? getRequiredSlots(selectedSlot, slots, neededCount)
+      : { slots: selectedSlot ? [selectedSlot] : [], error: null }
+  const extraSlotIds = requiredSlots.slice(1).map((s) => s.id)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedSlot) return
@@ -115,6 +125,10 @@ export default function BookPage() {
     }
     if (form.has_water === null || form.has_power === null) {
       setError('Please specify water and power access.')
+      return
+    }
+    if (slotConflictError) {
+      setError(slotConflictError)
       return
     }
 
@@ -130,6 +144,7 @@ export default function BookPage() {
           slot_id: selectedSlot.id,
           slot_date: selectedSlot.slot_date,
           slot_time: selectedSlot.slot_time,
+          extra_slot_ids: extraSlotIds.length ? extraSlotIds : null,
         }),
       })
 
@@ -531,6 +546,25 @@ export default function BookPage() {
                 )}
               </div>
             </div>
+
+            {/* Multi-slot summary / conflict warning */}
+            {form.services.length > 0 && selectedSlot && (
+              slotConflictError ? (
+                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+                  <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                  <p className="text-red-400 text-sm">{slotConflictError}</p>
+                </div>
+              ) : neededCount > 1 ? (
+                <div className="flex items-start gap-3 bg-brand/5 border border-brand/20 rounded-xl px-4 py-3">
+                  <AlertCircle size={16} className="text-brand shrink-0 mt-0.5" />
+                  <p className="text-gray-300 text-sm">
+                    This job will book{' '}
+                    <span className="text-white font-semibold">{neededCount} time slots</span>
+                    {' '}({requiredSlots.map((s) => formatTime(s.slot_time)).join(', ')}).
+                  </p>
+                </div>
+              ) : null
+            )}
 
             {/* Total estimate */}
             {total > 0 && (

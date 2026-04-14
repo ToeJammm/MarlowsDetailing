@@ -4,16 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { addDays, format, startOfDay } from 'date-fns'
 import { Loader2, LogOut, Plus, Trash2, Lock } from 'lucide-react'
-import { cn, formatTime } from '@/lib/utils'
+import { cn, formatTime, getSlotsForDate } from '@/lib/utils'
 import type { AvailabilitySlot } from '@/lib/types'
-
-const WEEKDAY_SLOTS = ['17:00']
-const WEEKEND_SLOTS = ['11:00', '13:00', '15:00', '17:00']
-
-function getSlotsForDate(dateStr: string): string[] {
-  const day = new Date(dateStr + 'T00:00:00').getDay() // 0=Sun, 6=Sat
-  return day === 0 || day === 6 ? WEEKEND_SLOTS : WEEKDAY_SLOTS
-}
 
 // Postgres returns TIME as 'HH:MM:SS' — strip to 'HH:MM' for consistent comparisons
 function normalizeSlot(slot: AvailabilitySlot): AvailabilitySlot {
