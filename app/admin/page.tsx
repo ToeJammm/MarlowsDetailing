@@ -15,6 +15,11 @@ function getSlotsForDate(dateStr: string): string[] {
   return day === 0 || day === 6 ? WEEKEND_SLOTS : WEEKDAY_SLOTS
 }
 
+// Postgres returns TIME as 'HH:MM:SS' — strip to 'HH:MM' for consistent comparisons
+function normalizeSlot(slot: AvailabilitySlot): AvailabilitySlot {
+  return { ...slot, slot_time: slot.slot_time.substring(0, 5) }
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [authed, setAuthed] = useState(false)
@@ -60,7 +65,7 @@ export default function AdminPage() {
           return
         }
         const json = await res.json()
-        setSlots(json.slots ?? [])
+        setSlots((json.slots ?? []).map(normalizeSlot))
         setAuthed(true)
         setAuthError('')
         setLoading(false)
@@ -75,7 +80,7 @@ export default function AdminPage() {
     const key = `${date}_${time}`
     setSavingSlot(key)
 
-    const existing = slots.find((s) => s.slot_date === date && s.slot_time.startsWith(time))
+    const existing = slots.find((s) => s.slot_date === date && s.slot_time === time)
 
     try {
       if (existing) {
@@ -109,7 +114,7 @@ export default function AdminPage() {
           alert(json.error || 'Failed to create slot.')
           return
         }
-        setSlots((prev) => [...prev, json.slot])
+        setSlots((prev) => [...prev, normalizeSlot(json.slot)])
       }
     } finally {
       setSavingSlot(null)
@@ -117,7 +122,7 @@ export default function AdminPage() {
   }
 
   const slotStatus = (date: string, time: string) => {
-    const slot = slots.find((s) => s.slot_date === date && s.slot_time.startsWith(time))
+    const slot = slots.find((s) => s.slot_date === date && s.slot_time === time)
     if (!slot) return 'empty'
     if (slot.is_booked) return 'booked'
     return 'available'
