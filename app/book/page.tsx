@@ -50,6 +50,7 @@ export default function BookPage() {
   const [form, setForm] = useState<BookingFormData>(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [agreesDropoff, setAgreesDropoff] = useState(false)
   const [calendarOffset, setCalendarOffset] = useState(0) // 0 = week 1, 1 = week 2
 
   const today = startOfDay(new Date())
@@ -125,6 +126,11 @@ export default function BookPage() {
     }
     if (form.has_water === null || form.has_power === null) {
       setError('Please specify water and power access.')
+      return
+    }
+    const needsDropoff = form.has_water === false || form.has_power === false
+    if (needsDropoff && !agreesDropoff) {
+      setError('Please confirm you agree to bring your vehicle to us.')
       return
     }
     if (slotConflictError) {
@@ -585,15 +591,43 @@ export default function BookPage() {
                 label="Water Access"
                 hint="Outdoor spigot or hose nearby"
                 value={form.has_water}
-                onChange={(v) => setForm((f) => ({ ...f, has_water: v }))}
+                onChange={(v) => {
+                  setForm((f) => ({ ...f, has_water: v }))
+                  if (v && form.has_power !== false) setAgreesDropoff(false)
+                }}
               />
               <ToggleField
                 label="Power Access"
                 hint="Outdoor outlet or extension cord"
                 value={form.has_power}
-                onChange={(v) => setForm((f) => ({ ...f, has_power: v }))}
+                onChange={(v) => {
+                  setForm((f) => ({ ...f, has_power: v }))
+                  if (v && form.has_water !== false) setAgreesDropoff(false)
+                }}
               />
             </div>
+
+            {/* Drop-off acknowledgment — shown when water OR power is No */}
+            {(form.has_water === false || form.has_power === false) && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-3">
+                <p className="text-amber-300 text-sm font-semibold">Mobile service requires water and power</p>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Since you don&apos;t have both available, you&apos;re welcome to bring your vehicle to us instead.
+                  Please note there is <span className="text-white font-medium">no indoor waiting area</span> — you&apos;re welcome to hang out outside in the garage while we work.
+                </p>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreesDropoff}
+                    onChange={(e) => setAgreesDropoff(e.target.checked)}
+                    className="mt-0.5 accent-brand w-4 h-4 shrink-0"
+                  />
+                  <span className="text-gray-300 text-sm">
+                    I understand I need to bring my vehicle to Marlow&apos;s Detailing and that there is no indoor waiting area.
+                  </span>
+                </label>
+              </div>
+            )}
           </Section>
 
           {/* Notes */}
