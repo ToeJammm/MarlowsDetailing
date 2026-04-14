@@ -95,16 +95,11 @@ export default function BookPage() {
   const availableDates = [...new Set(slots.map((s) => s.slot_date))]
 
   function toggleService(service: ServiceType) {
-    setForm((f) => {
-      if (service === 'Both') {
-        return { ...f, services: f.services.includes('Both') ? [] : ['Both'] }
-      }
-      const without = f.services.filter((s) => s !== 'Both' && s !== service)
-      return {
-        ...f,
-        services: f.services.includes(service) ? without : [...without, service],
-      }
-    })
+    setForm((f) => ({
+      ...f,
+      // Clicking the already-selected option deselects it; otherwise select only this one
+      services: f.services.includes(service) ? [] : [service],
+    }))
   }
 
   function toggleAddon(addon: AddonType) {
