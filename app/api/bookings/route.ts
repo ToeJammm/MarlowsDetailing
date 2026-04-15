@@ -88,13 +88,15 @@ export async function POST(req: NextRequest) {
       .in('id', allSlotIds)
 
     // Send SMS notification to owner
+    let smsError: string | null = null
     try {
       await sendBookingNotification(booking)
     } catch (smsErr) {
       console.error('SMS notification failed (booking still created):', smsErr)
+      smsError = smsErr instanceof Error ? smsErr.message : String(smsErr)
     }
 
-    return NextResponse.json({ success: true, bookingId: booking.id }, { status: 201 })
+    return NextResponse.json({ success: true, bookingId: booking.id, smsError }, { status: 201 })
   } catch (err) {
     console.error('POST /api/bookings error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

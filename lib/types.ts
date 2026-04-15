@@ -68,9 +68,9 @@ export const PRICING: Record<VehicleType, Record<ServiceType, number>> = {
 
 export const ADDON_PRICING: Record<AddonType, number> = {
   'Decontamination': 10,
-  'Steam Cleaning': 10,
+  'Steam Cleaning': 15,
   'Ceramic Coating': 15,
-  'Extractor Cleaning': 15,
+  'Extractor Cleaning': 25,
 }
 
 export const ADDON_DESCRIPTIONS: Record<AddonType, string> = {
