@@ -497,6 +497,12 @@ export default function BookPage() {
               <p className="text-gray-400 text-sm leading-relaxed">
                 Because your vehicle is rated <span className="text-white font-medium">{form.dirt_rating}/10</span>, we need photos so we can prepare properly. Please upload a clear photo for each angle below.
               </p>
+              <div className="flex gap-2.5 bg-brand/5 border border-brand/20 rounded-2xl px-4 py-3">
+                <span className="text-brand text-sm mt-0.5 shrink-0">*</span>
+                <p className="text-gray-400 text-xs leading-relaxed">
+                  <span className="text-white font-medium">Pricing disclaimer:</span> Quoted prices are estimates based on vehicle size and selected services. We reserve the right to adjust the final price if the actual condition of the vehicle upon arrival is significantly worse than indicated.
+                </p>
+              </div>
               <div className="space-y-3">
                 {getRequiredPhotos(form.services).map((label) => (
                   <PhotoUpload
@@ -668,6 +674,11 @@ export default function BookPage() {
               className="w-full bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a] focus:border-brand rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 resize-none outline-none transition-colors"
             />
           </Section>
+
+          {/* Pricing disclaimer */}
+          <p className="text-gray-600 text-xs leading-relaxed text-center px-2">
+            Quoted prices are estimates. We reserve the right to adjust the final price if the actual condition of the vehicle upon arrival is significantly worse than indicated.
+          </p>
 
           {/* Error */}
           {error && (
