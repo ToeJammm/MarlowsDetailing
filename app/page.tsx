@@ -281,7 +281,7 @@ export default function HomePage() {
                   Got a Special Job?
                 </h2>
                 <p className="text-gray-400 text-sm leading-relaxed max-w-lg">
-                  Fleets, motorcycles, RVs, boats, or anything outside the standard booking — give us a call and we&apos;ll work out the details directly.
+                  Fleets, motorcycles, RVs, or anything outside the standard booking — give us a call and we&apos;ll work out the details directly.
                 </p>
               </div>
               <a
