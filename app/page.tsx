@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Car, Sparkles, CheckCircle, Star, Droplets, Zap, ArrowRight } from 'lucide-react'
+import { Car, Sparkles, CheckCircle, Star, Droplets, Zap, ArrowRight, Phone, Truck } from 'lucide-react'
 import { PRICING, ADDON_PRICING, ADDON_DESCRIPTIONS } from '@/lib/types'
 
 export default function HomePage() {
@@ -265,6 +265,34 @@ export default function HomePage() {
                 <Zap size={15} className="text-brand shrink-0" />
                 <span className="text-gray-400">Power outlet required for mobile service</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SPECIAL JOBS ─────────────────────────────────────── */}
+      <section className="py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-surface-2 border border-white/[0.07] rounded-3xl p-8 sm:p-10 shadow-elevation-md">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+              <div className="w-14 h-14 bg-brand/10 rounded-2xl flex items-center justify-center shrink-0 shadow-elevation-sm">
+                <Truck size={26} className="text-brand" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-extrabold text-white mb-2">
+                  Got a Special Job?
+                </h2>
+                <p className="text-gray-400 text-sm leading-relaxed max-w-lg">
+                  Fleets, motorcycles, RVs, boats, or anything outside the standard booking — give us a call and we&apos;ll work out the details directly.
+                </p>
+              </div>
+              <a
+                href="tel:8324492025"
+                className="flex items-center gap-2.5 bg-brand hover:bg-brand-light text-white font-bold px-7 py-4 rounded-full transition-all duration-200 shrink-0 text-sm"
+              >
+                <Phone size={16} />
+                (832) 449-2025
+              </a>
             </div>
           </div>
         </div>
