@@ -30,14 +30,14 @@ export default function HomePage() {
           />
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-            Showroom Shine.
+            Professional Detailing
             <br />
-            <span className="text-brand-muted">Zero Effort.</span>
+            <span className="text-brand-muted">At Your Door.</span>
           </h1>
 
           <p className="text-gray-400 text-lg sm:text-xl max-w-xl mb-10 leading-relaxed">
-            Professional mobile detailing brought straight to your driveway —
-            no drop-off, no waiting, no hassle.
+            We bring the equipment, the expertise, and showroom shine
+            straight to your driveway.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -273,13 +273,6 @@ export default function HomePage() {
       {/* ── FINAL CTA ────────────────────────────────────────── */}
       <section className="py-24 px-4 text-center">
         <div className="max-w-2xl mx-auto">
-          <Image
-            src="/logo/detailing_logo_dark_no_bg.png"
-            alt="Marlow's Detailing"
-            width={96}
-            height={96}
-            className="mx-auto mb-6 drop-shadow-[0_4px_16px_rgba(82,116,116,0.25)]"
-          />
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             Ready for a Clean Ride?
           </h2>
