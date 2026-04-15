@@ -1,6 +1,6 @@
 export type VehicleType = 'sedan_coupe' | 'suv_truck'
 export type ServiceType = 'Interior Detail' | 'Exterior Detail' | 'Both'
-export type AddonType = 'Decontamination' | 'Steam Cleaning' | 'Ceramic Coating' | 'Extractor Cleaning'
+export type AddonType = 'Decontamination' | 'Steam Cleaning' | 'Ceramic Coating' | 'Extractor Cleaning' | 'Enzyme Stain Treatment'
 export type BookingStatus = 'pending' | 'confirmed' | 'denied'
 
 export interface AvailabilitySlot {
@@ -67,10 +67,11 @@ export const PRICING: Record<VehicleType, Record<ServiceType, number>> = {
 }
 
 export const ADDON_PRICING: Record<AddonType, number> = {
-  'Decontamination': 10,
+  'Decontamination': 20,
   'Steam Cleaning': 15,
   'Ceramic Coating': 15,
   'Extractor Cleaning': 25,
+  'Enzyme Stain Treatment': 10,
 }
 
 export const ADDON_DESCRIPTIONS: Record<AddonType, string> = {
@@ -78,4 +79,5 @@ export const ADDON_DESCRIPTIONS: Record<AddonType, string> = {
   'Steam Cleaning': 'Deep steam clean for tough grime',
   'Ceramic Coating': 'Paint protection up to 6 months',
   'Extractor Cleaning': 'Deep carpet & upholstery extraction',
+  'Enzyme Stain Treatment': 'Biological enzyme formula for pet, food & odor stains',
 }
