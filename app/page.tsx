@@ -9,9 +9,9 @@ export default function HomePage() {
       {/* ── HERO ────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-radial from-[#1a2e2e] via-[#0a0a0a] to-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-gradient-radial from-[#162828] via-[#0a0a0a] to-[#0a0a0a]" />
         <div
-          className="absolute inset-0 opacity-5"
+          className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
               'radial-gradient(circle at 1px 1px, #527474 1px, transparent 0)',
@@ -21,11 +21,11 @@ export default function HomePage() {
 
         <div className="relative z-10 flex flex-col items-center text-center px-4 pt-20">
           <Image
-            src="/logo/logo-w-text.jpeg"
+            src="/logo/detailing_logo_dark_no_bg.png"
             alt="Marlow's Detailing"
-            width={240}
-            height={240}
-            className="rounded-xl mb-8 shadow-2xl"
+            width={220}
+            height={220}
+            className="mb-8 drop-shadow-[0_8px_32px_rgba(82,116,116,0.3)]"
             priority
           />
 
@@ -43,13 +43,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/book"
-              className="bg-brand hover:bg-brand-light text-white font-bold text-base px-8 py-4 rounded-full transition-all duration-200 shadow-lg shadow-brand/20 flex items-center gap-2 justify-center"
+              className="bg-brand hover:bg-brand-light text-white font-bold text-base px-8 py-4 rounded-full transition-all duration-200 shadow-brand hover:shadow-[0_12px_40px_rgba(82,116,116,0.35)] flex items-center gap-2 justify-center"
             >
               Book Your Detail <ArrowRight size={18} />
             </Link>
             <Link
               href="#services"
-              className="border border-[#3a3a3a] hover:border-brand text-gray-300 hover:text-white font-semibold text-base px-8 py-4 rounded-full transition-all duration-200"
+              className="border border-white/[0.1] hover:border-brand/60 bg-white/[0.03] hover:bg-white/[0.05] text-gray-300 hover:text-white font-semibold text-base px-8 py-4 rounded-full transition-all duration-200 backdrop-blur-sm"
             >
               See Services & Pricing
             </Link>
@@ -68,7 +68,7 @@ export default function HomePage() {
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-5 h-9 border-2 border-[#3a3a3a] rounded-full flex justify-center pt-1.5">
+          <div className="w-5 h-9 border border-white/10 rounded-full flex justify-center pt-1.5">
             <div className="w-1 h-2 bg-brand rounded-full" />
           </div>
         </div>
@@ -92,16 +92,16 @@ export default function HomePage() {
           {/* Service cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {/* Interior */}
-            <div className="bg-[#111] border border-[#2a2a2a] hover:border-brand rounded-2xl p-6 transition-colors group">
-              <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-surface-2 border border-white/[0.07] hover:border-brand/40 rounded-3xl p-7 transition-all duration-300 group shadow-elevation-md hover:shadow-elevation-lg hover:-translate-y-0.5">
+              <div className="w-11 h-11 bg-brand/10 rounded-2xl flex items-center justify-center mb-5 shadow-elevation-sm">
                 <Sparkles size={20} className="text-brand" />
               </div>
               <h3 className="text-white font-bold text-xl mb-2">Interior Detail</h3>
-              <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                 Full vacuum, wipe-down, window cleaning, and deep interior clean. Your cabin
                 will look and smell brand new.
               </p>
-              <div className="border-t border-[#2a2a2a] pt-4 flex justify-between items-center">
+              <div className="border-t border-white/[0.06] pt-5 flex justify-between items-center">
                 <div>
                   <p className="text-2xl font-extrabold text-white">
                     ${PRICING.sedan_coupe['Interior Detail']}
@@ -119,16 +119,16 @@ export default function HomePage() {
             </div>
 
             {/* Exterior */}
-            <div className="bg-[#111] border border-[#2a2a2a] hover:border-brand rounded-2xl p-6 transition-colors group">
-              <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-surface-2 border border-white/[0.07] hover:border-brand/40 rounded-3xl p-7 transition-all duration-300 group shadow-elevation-md hover:shadow-elevation-lg hover:-translate-y-0.5">
+              <div className="w-11 h-11 bg-brand/10 rounded-2xl flex items-center justify-center mb-5 shadow-elevation-sm">
                 <Car size={20} className="text-brand" />
               </div>
               <h3 className="text-white font-bold text-xl mb-2">Exterior Detail</h3>
-              <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                 Hand wash, wheel clean, tire dressing, and exterior wipe-down. Your paint
                 will turn heads.
               </p>
-              <div className="border-t border-[#2a2a2a] pt-4 flex justify-between items-center">
+              <div className="border-t border-white/[0.06] pt-5 flex justify-between items-center">
                 <div>
                   <p className="text-2xl font-extrabold text-white">
                     ${PRICING.sedan_coupe['Exterior Detail']}
@@ -145,20 +145,20 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Both — featured */}
-            <div className="bg-brand/10 border border-brand rounded-2xl p-6 relative group">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand text-white text-xs font-bold px-3 py-1 rounded-full">
+            {/* Both — featured, highest elevation */}
+            <div className="bg-surface-3 border border-brand/25 hover:border-brand/50 rounded-3xl p-7 relative group shadow-elevation-lg hover:shadow-[0_12px_48px_rgba(0,0,0,0.65),0_0_0_1px_rgba(82,116,116,0.15)] transition-all duration-300 hover:-translate-y-0.5">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand text-white text-xs font-bold px-3 py-1 rounded-full shadow-brand-sm">
                 BEST VALUE
               </div>
-              <div className="w-10 h-10 bg-brand/20 rounded-xl flex items-center justify-center mb-4">
+              <div className="w-11 h-11 bg-brand/15 rounded-2xl flex items-center justify-center mb-5 shadow-elevation-sm">
                 <CheckCircle size={20} className="text-brand" />
               </div>
               <h3 className="text-white font-bold text-xl mb-2">Interior + Exterior</h3>
-              <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                 The full treatment — inside and out. Best way to restore your vehicle to
                 showroom condition.
               </p>
-              <div className="border-t border-brand/30 pt-4 flex justify-between items-center">
+              <div className="border-t border-brand/15 pt-5 flex justify-between items-center">
                 <div>
                   <p className="text-2xl font-extrabold text-white">
                     ${PRICING.sedan_coupe['Both']}
@@ -186,7 +186,7 @@ export default function HomePage() {
                 ([addon, price]) => (
                   <div
                     key={addon}
-                    className="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 hover:border-brand/50 transition-colors"
+                    className="bg-surface-1 border border-white/[0.06] hover:border-brand/35 rounded-2xl p-5 transition-all duration-200 shadow-elevation-sm hover:shadow-elevation-md hover:-translate-y-0.5"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <p className="text-white font-semibold text-sm">{addon}</p>
@@ -204,7 +204,7 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS ────────────────────────────────────── */}
-      <section id="how-it-works" className="py-24 px-4 bg-[#0d0d0d]">
+      <section id="how-it-works" className="py-24 px-4" style={{ backgroundColor: 'var(--surface-1)' }}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-brand text-sm font-semibold uppercase tracking-widest mb-3">
@@ -235,10 +235,10 @@ export default function HomePage() {
               },
             ].map(({ step, icon, title, desc }) => (
               <div key={step} className="relative flex flex-col items-center text-center">
-                <div className="text-[80px] font-black text-[#1a1a1a] leading-none mb-4 select-none">
+                <div className="text-[80px] font-black text-surface-3 leading-none mb-4 select-none">
                   {step}
                 </div>
-                <div className="w-12 h-12 bg-[#1a1a1a] border border-[#2a2a2a] rounded-full flex items-center justify-center mb-4 -mt-14">
+                <div className="w-12 h-12 bg-surface-3 border border-white/[0.08] rounded-2xl flex items-center justify-center mb-4 -mt-14 shadow-elevation-md">
                   {icon}
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">{title}</h3>
@@ -248,7 +248,7 @@ export default function HomePage() {
           </div>
 
           {/* Utility note */}
-          <div className="mt-14 bg-[#111] border border-brand/20 rounded-xl p-6 space-y-4">
+          <div className="mt-14 bg-surface-2 border border-white/[0.07] rounded-3xl p-7 space-y-4 shadow-elevation-md">
             <p className="text-white font-semibold text-sm">Important — Before You Book</p>
             <p className="text-gray-400 text-sm leading-relaxed">
               For us to come to <span className="text-white font-medium">your location</span>, you must be able to provide access to both a water source (outdoor spigot or hose) and a power outlet. These are required to perform the detail on-site.
@@ -274,11 +274,11 @@ export default function HomePage() {
       <section className="py-24 px-4 text-center">
         <div className="max-w-2xl mx-auto">
           <Image
-            src="/logo/logo-wo-text.jpeg"
+            src="/logo/detailing_logo_dark_no_bg.png"
             alt="Marlow's Detailing"
-            width={80}
-            height={80}
-            className="rounded-lg mx-auto mb-6"
+            width={96}
+            height={96}
+            className="mx-auto mb-6 drop-shadow-[0_4px_16px_rgba(82,116,116,0.25)]"
           />
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             Ready for a Clean Ride?
@@ -288,7 +288,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/book"
-            className="inline-flex items-center gap-2 bg-brand hover:bg-brand-light text-white font-bold text-lg px-10 py-4 rounded-full transition-all duration-200 shadow-lg shadow-brand/20"
+            className="inline-flex items-center gap-2 bg-brand hover:bg-brand-light text-white font-bold text-lg px-10 py-4 rounded-full transition-all duration-200 shadow-brand hover:shadow-[0_12px_40px_rgba(82,116,116,0.35)] hover:-translate-y-0.5"
           >
             Book Now <ArrowRight size={20} />
           </Link>

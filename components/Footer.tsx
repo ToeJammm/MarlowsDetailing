@@ -4,17 +4,17 @@ import { Instagram } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="bg-[#080808] border-t border-[#1f1f1f] py-12 px-4">
+    <footer className="border-t border-white/[0.06] py-12 px-4" style={{ backgroundColor: 'var(--surface-1)' }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8">
           {/* Brand */}
           <div className="flex flex-col items-center md:items-start gap-3">
             <Image
-              src="/logo/logo-w-text.jpeg"
+              src="/logo/detailing_logo_dark_no_bg.png"
               alt="Marlow's Detailing"
               width={120}
               height={120}
-              className="rounded-md"
+              className="drop-shadow-[0_4px_16px_rgba(82,116,116,0.2)]"
             />
             <p className="text-gray-500 text-sm text-center md:text-left max-w-xs">
               Premium mobile auto detailing brought to your door.
@@ -23,7 +23,7 @@ export default function Footer() {
 
           {/* Links */}
           <div className="flex flex-col items-center md:items-start gap-2">
-            <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Navigation</p>
+            <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Navigation</p>
             <Link href="/#services" className="text-gray-400 hover:text-white text-sm transition-colors">
               Services & Pricing
             </Link>
@@ -37,7 +37,7 @@ export default function Footer() {
 
           {/* Social */}
           <div className="flex flex-col items-center md:items-start gap-3">
-            <p className="text-gray-400 text-xs uppercase tracking-widest">Follow Us</p>
+            <p className="text-gray-500 text-xs uppercase tracking-widest">Follow Us</p>
             <a
               href="https://instagram.com/MarlowsDetailing"
               target="_blank"
@@ -50,7 +50,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-[#1f1f1f] text-center">
+        <div className="mt-10 pt-6 border-t border-white/[0.05] text-center">
           <p className="text-gray-600 text-xs">
             &copy; {new Date().getFullYear()} Marlow&apos;s Detailing. All rights reserved.
           </p>

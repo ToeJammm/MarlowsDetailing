@@ -19,35 +19,36 @@ export default function Navbar() {
   return (
     <nav
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-[#2a2a2a]' : 'bg-transparent'
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
+        scrolled
+          ? 'bg-[#0a0a0a]/80 backdrop-blur-2xl shadow-elevation-lg border-b border-white/[0.06]'
+          : 'bg-transparent'
       )}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2.5">
           <Image
-            src="/logo/logo-wo-text.jpeg"
+            src="/logo/detailing_logo_dark_no_bg.png"
             alt="Marlow's Detailing"
-            width={40}
-            height={40}
-            className="rounded-sm"
+            width={36}
+            height={36}
           />
-          <span className="font-bold text-white text-sm tracking-wide hidden sm:block">
+          <span className="font-semibold text-white text-sm tracking-wide hidden sm:block">
             MARLOW&apos;S DETAILING
           </span>
         </Link>
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/#services" className="text-sm text-gray-300 hover:text-white transition-colors">
+          <Link href="/#services" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
             Services
           </Link>
-          <Link href="/#how-it-works" className="text-sm text-gray-300 hover:text-white transition-colors">
+          <Link href="/#how-it-works" className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
             How It Works
           </Link>
           <Link
             href="/book"
-            className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-5 py-2 rounded-full transition-colors"
+            className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-5 py-2 rounded-full transition-all duration-200 shadow-brand-sm hover:shadow-brand"
           >
             Book Now
           </Link>
@@ -65,7 +66,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden bg-[#0f0f0f] border-t border-[#2a2a2a] px-4 py-4 flex flex-col gap-4">
+        <div className="md:hidden bg-surface-2/95 backdrop-blur-2xl border-t border-white/[0.06] px-4 py-4 flex flex-col gap-4 shadow-elevation-lg">
           <Link
             href="/#services"
             onClick={() => setMenuOpen(false)}
@@ -83,7 +84,7 @@ export default function Navbar() {
           <Link
             href="/book"
             onClick={() => setMenuOpen(false)}
-            className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-5 py-3 rounded-full text-center transition-colors"
+            className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-5 py-3 rounded-full text-center transition-all duration-200 shadow-brand-sm"
           >
             Book Now
           </Link>
