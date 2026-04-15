@@ -500,7 +500,7 @@ export default function BookPage() {
               <div className="flex gap-2.5 bg-brand/5 border border-brand/20 rounded-2xl px-4 py-3">
                 <span className="text-brand text-sm mt-0.5 shrink-0">*</span>
                 <p className="text-gray-400 text-xs leading-relaxed">
-                  <span className="text-white font-medium">Pricing disclaimer:</span> Quoted prices are estimates based on vehicle size and selected services. We reserve the right to adjust the final price if the actual condition of the vehicle upon arrival is significantly worse than indicated.
+                  <span className="text-white font-medium">Pricing disclaimer:</span> We reserve the right to adjust the final price if the car is in bad enough condition that it requires significantly more time and chemicals than expected.
                 </p>
               </div>
               <div className="space-y-3">
@@ -677,7 +677,7 @@ export default function BookPage() {
 
           {/* Pricing disclaimer */}
           <p className="text-gray-600 text-xs leading-relaxed text-center px-2">
-            Quoted prices are estimates. We reserve the right to adjust the final price if the actual condition of the vehicle upon arrival is significantly worse than indicated.
+            We reserve the right to adjust the final price if the car is in bad enough condition that it requires significantly more time and chemicals than expected.
           </p>
 
           {/* Error */}
