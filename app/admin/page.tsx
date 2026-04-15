@@ -389,7 +389,7 @@ export default function AdminPage() {
                         contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8 }}
                         labelStyle={{ color: '#e5e7eb', fontWeight: 600 }}
                         itemStyle={{ color: '#527474' }}
-                        formatter={(value: number) => [`$${value}`, 'Revenue']}
+                        formatter={(value) => [`$${value}`, 'Revenue']}
                       />
                       <Bar dataKey="revenue" fill="#527474" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -418,7 +418,7 @@ export default function AdminPage() {
                         contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8 }}
                         labelStyle={{ color: '#e5e7eb', fontWeight: 600 }}
                         itemStyle={{ color: '#527474' }}
-                        formatter={(value: number) => [value, 'Jobs']}
+                        formatter={(value) => [value, 'Jobs']}
                       />
                       <Bar dataKey="jobs" fill="#527474" radius={[4, 4, 0, 0]} />
                     </BarChart>
