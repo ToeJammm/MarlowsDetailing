@@ -46,12 +46,13 @@ export default function AdminPage() {
   const [recentJobs, setRecentJobs] = useState<RecentJob[] | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({})
-  const [upcomingJobs, setUpcomingJobs] = useState<(RecentJob & { client_phone: string; message: string | null })[] | null>(null)
+  const [upcomingJobs, setUpcomingJobs] = useState<(RecentJob & { client_phone: string; message: string | null; status: string })[] | null>(null)
   const [upcomingLoading, setUpcomingLoading] = useState(false)
 
   const today = startOfDay(new Date())
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchSlots = useCallback(async (pw: string) => {
     setLoading(true)
     try {
@@ -153,7 +154,7 @@ export default function AdminPage() {
     }
   }
 
-  function handleLogin(e: React.FormEvent) {
+  function handleLogin(e: React.SyntheticEvent) {
     e.preventDefault()
     if (!password.trim()) return
     setLoading(true)
@@ -576,7 +577,7 @@ export default function AdminPage() {
                   <Loader2 size={20} className="animate-spin text-brand" />
                 </div>
               ) : recentJobs.length === 0 ? (
-                <p className="text-gray-600 text-sm text-center py-8">No confirmed jobs yet.</p>
+                <p className="text-gray-600 text-sm text-center py-8">No recent jobs yet.</p>
               ) : (
                 <div className="space-y-3">
                   {recentJobs.map((job) => {
