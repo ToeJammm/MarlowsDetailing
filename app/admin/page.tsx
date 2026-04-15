@@ -46,6 +46,8 @@ export default function AdminPage() {
   const [recentJobs, setRecentJobs] = useState<RecentJob[] | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({})
+  const [upcomingJobs, setUpcomingJobs] = useState<(RecentJob & { client_phone: string; message: string | null })[] | null>(null)
+  const [upcomingLoading, setUpcomingLoading] = useState(false)
 
   const today = startOfDay(new Date())
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
@@ -100,6 +102,22 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchUpcoming = useCallback(async (pw: string) => {
+    setUpcomingLoading(true)
+    try {
+      const res = await fetch('/api/admin/jobs?upcoming=true', {
+        headers: { 'x-admin-password': pw },
+      })
+      if (!res.ok) throw new Error()
+      const json = await res.json()
+      setUpcomingJobs(json.jobs ?? [])
+    } catch {
+      setUpcomingJobs([])
+    } finally {
+      setUpcomingLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (authed && tab === 'dashboard') {
       fetchStats(password, statsRange)
@@ -111,6 +129,12 @@ export default function AdminPage() {
       fetchJobs(password)
     }
   }, [authed, tab, recentJobs, password, fetchJobs])
+
+  useEffect(() => {
+    if (authed && upcomingJobs === null) {
+      fetchUpcoming(password)
+    }
+  }, [authed, upcomingJobs, password, fetchUpcoming])
 
   async function savePrice(jobId: string) {
     const raw = editingPrice[jobId]
@@ -409,6 +433,53 @@ export default function AdminPage() {
                 Select a date above to manage time slots.
               </div>
             )}
+
+            {/* Upcoming jobs */}
+            <div className="mt-8 bg-surface-2 border border-white/[0.07] rounded-2xl p-6">
+              <p className="font-display font-bold uppercase text-white text-lg mb-5">Upcoming Jobs</p>
+              {upcomingLoading || upcomingJobs === null ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 size={20} className="animate-spin text-brand" />
+                </div>
+              ) : upcomingJobs.length === 0 ? (
+                <p className="text-gray-600 text-sm text-center py-6">No upcoming jobs.</p>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingJobs.map((job) => {
+                    const price = job.final_price ?? calculateTotal(job.vehicle_type, job.services, job.addons ?? [])
+                    return (
+                      <div key={job.id} className="bg-surface-1 border border-white/[0.06] rounded-xl px-4 py-4 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-white font-semibold text-sm">{job.client_name}</p>
+                              <span className={cn(
+                                'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full',
+                                job.status === 'confirmed'
+                                  ? 'bg-brand/15 text-brand'
+                                  : 'bg-amber-500/15 text-amber-400'
+                              )}>
+                                {job.status}
+                              </span>
+                            </div>
+                            <p className="text-gray-500 text-xs mt-0.5">
+                              {formatDate(job.slot_date)} · {formatTime(job.slot_time)}
+                            </p>
+                          </div>
+                          <span className="font-display font-bold text-white text-lg shrink-0">${price}</span>
+                        </div>
+                        <p className="text-gray-500 text-xs">
+                          {[job.car_year, job.car_make, job.car_model].filter(Boolean).join(' ')} · {job.services.join(', ')}
+                        </p>
+                        {job.message && (
+                          <p className="text-gray-600 text-xs italic">&ldquo;{job.message}&rdquo;</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
 

@@ -7,7 +7,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const upcoming = req.nextUrl.searchParams.get('upcoming') === 'true'
   const supabase = createAdminClient()
+
+  if (upcoming) {
+    const today = new Date().toISOString().split('T')[0]
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('id, slot_date, slot_time, client_name, client_phone, car_year, car_make, car_model, vehicle_type, services, addons, final_price, status, message')
+      .in('status', ['confirmed', 'pending'])
+      .gte('slot_date', today)
+      .order('slot_date', { ascending: true })
+      .order('slot_time', { ascending: true })
+
+    if (error) return NextResponse.json({ error: 'Failed to fetch upcoming jobs' }, { status: 500 })
+    return NextResponse.json({ jobs: data ?? [] })
+  }
+
+  // Recent confirmed jobs (dashboard)
   const { data, error } = await supabase
     .from('bookings')
     .select('id, slot_date, slot_time, client_name, car_year, car_make, car_model, vehicle_type, services, addons, final_price, status')
