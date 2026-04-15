@@ -47,6 +47,17 @@ export default function Navbar() {
           >
             <Instagram size={18} />
           </a>
+          <a
+            href="https://www.facebook.com/profile.php?id=61585914334081"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors duration-200"
+            aria-label="Facebook"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+            </svg>
+          </a>
           <Link
             href="/book"
             className="bg-brand hover:bg-brand-light text-white text-sm font-semibold px-5 py-2 rounded-full transition-all duration-200"
@@ -90,6 +101,18 @@ export default function Navbar() {
             className="flex items-center gap-2 text-gray-300 hover:text-white text-sm py-2"
           >
             <Instagram size={16} /> @marlowsdetailing
+          </a>
+          <a
+            href="https://www.facebook.com/profile.php?id=61585914334081"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-2 text-gray-300 hover:text-white text-sm py-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+            </svg>
+            Marlow&apos;s Detailing
           </a>
           <Link
             href="/book"
