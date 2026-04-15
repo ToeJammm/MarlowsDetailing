@@ -30,20 +30,20 @@ export default function HomePage() {
           />
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-            Your Car, Transformed.
+            Showroom Shine.
             <br />
-            <span className="text-brand-muted">At Your Door.</span>
+            <span className="text-brand-muted">Zero Effort.</span>
           </h1>
 
           <p className="text-gray-400 text-lg sm:text-xl max-w-xl mb-10 leading-relaxed">
-            Professional mobile auto detailing — we bring the equipment, the expertise, and
-            the shine straight to you.
+            Professional mobile detailing brought straight to your driveway —
+            no drop-off, no waiting, no hassle.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/book"
-              className="bg-brand hover:bg-brand-light text-white font-bold text-base px-8 py-4 rounded-full transition-all duration-200 shadow-brand hover:shadow-[0_12px_40px_rgba(82,116,116,0.35)] flex items-center gap-2 justify-center"
+              className="bg-brand hover:bg-brand-light text-white font-bold text-base px-8 py-4 rounded-full transition-all duration-200 flex items-center gap-2 justify-center"
             >
               Book Your Detail <ArrowRight size={18} />
             </Link>
@@ -288,7 +288,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/book"
-            className="inline-flex items-center gap-2 bg-brand hover:bg-brand-light text-white font-bold text-lg px-10 py-4 rounded-full transition-all duration-200 shadow-brand hover:shadow-[0_12px_40px_rgba(82,116,116,0.35)] hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 bg-brand hover:bg-brand-light text-white font-bold text-lg px-10 py-4 rounded-full transition-all duration-200 hover:-translate-y-0.5"
           >
             Book Now <ArrowRight size={20} />
           </Link>

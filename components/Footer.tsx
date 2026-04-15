@@ -39,7 +39,7 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-start gap-3">
             <p className="text-gray-500 text-xs uppercase tracking-widest">Follow Us</p>
             <a
-              href="https://instagram.com/MarlowsDetailing"
+              href="https://instagram.com/marlowsdetailing"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"

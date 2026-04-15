@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Image from 'next/image'
 import {
   ChevronLeft,
-  ChevronRight,
   Car,
   Loader2,
   CheckCircle2,
@@ -64,11 +62,9 @@ export default function BookPage() {
   const [error, setError] = useState<string | null>(null)
   const [agreesDropoff, setAgreesDropoff] = useState(false)
   const [photos, setPhotos] = useState<Record<string, File>>({})
-  const [calendarOffset, setCalendarOffset] = useState(0) // 0 = week 1, 1 = week 2
 
   const today = startOfDay(new Date())
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
-  const week = days.slice(calendarOffset * 7, calendarOffset * 7 + 7)
 
   // Fetch available slots
   useEffect(() => {
@@ -251,46 +247,8 @@ export default function BookPage() {
       <div className="min-h-screen px-4 pt-24 pb-16">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <Image
-              src="/logo/logo-wo-text.jpeg"
-              alt="Marlow's Detailing"
-              width={60}
-              height={60}
-              className="rounded-lg mx-auto mb-4"
-            />
             <h1 className="text-3xl font-extrabold text-white mb-2">Book Your Appointment</h1>
             <p className="text-gray-400">Pick an available date to get started.</p>
-          </div>
-
-          {/* Week toggle */}
-          <div className="flex items-center justify-between mb-5">
-            <button
-              onClick={() => setCalendarOffset(0)}
-              disabled={calendarOffset === 0}
-              className={cn(
-                'flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-full transition-colors',
-                calendarOffset === 0
-                  ? 'text-gray-600 cursor-not-allowed'
-                  : 'text-gray-300 hover:text-white hover:bg-[#1a1a1a]'
-              )}
-            >
-              <ChevronLeft size={16} /> This week
-            </button>
-            <p className="text-gray-500 text-sm font-medium">
-              {calendarOffset === 0 ? 'Week 1' : 'Week 2'}
-            </p>
-            <button
-              onClick={() => setCalendarOffset(1)}
-              disabled={calendarOffset === 1}
-              className={cn(
-                'flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-full transition-colors',
-                calendarOffset === 1
-                  ? 'text-gray-600 cursor-not-allowed'
-                  : 'text-gray-300 hover:text-white hover:bg-[#1a1a1a]'
-              )}
-            >
-              Next week <ChevronRight size={16} />
-            </button>
           </div>
 
           {loadingSlots ? (
@@ -299,52 +257,61 @@ export default function BookPage() {
             </div>
           ) : (
             <>
-              {/* Day buttons */}
-              <div className="grid grid-cols-7 gap-2 mb-8">
-                {week.map((day) => {
-                  const dateStr = format(day, 'yyyy-MM-dd')
-                  const hasSlots = availableDates.includes(dateStr)
-                  const isSelected = selectedDate === dateStr
-                  const isToday = isSameDay(day, today)
+              {/* Scrollable 14-day strip */}
+              <div className="overflow-x-auto pb-2 -mx-4 px-4 mb-8">
+                <div className="flex gap-2.5" style={{ minWidth: 'max-content' }}>
+                  {days.map((day) => {
+                    const dateStr = format(day, 'yyyy-MM-dd')
+                    const hasSlots = availableDates.includes(dateStr)
+                    const isSelected = selectedDate === dateStr
+                    const isToday = isSameDay(day, today)
 
-                  return (
-                    <button
-                      key={dateStr}
-                      onClick={() => {
-                        if (!hasSlots) return
-                        setSelectedDate(dateStr)
-                        setSelectedSlot(null)
-                      }}
-                      disabled={!hasSlots}
-                      className={cn(
-                        'relative flex flex-col items-center py-3 rounded-xl border transition-all',
-                        isSelected
-                          ? 'bg-brand border-brand text-white'
-                          : hasSlots
-                          ? 'bg-[#111] border-[#2a2a2a] hover:border-brand/60 cursor-pointer'
-                          : 'bg-[#0d0d0d] border-[#1a1a1a] cursor-not-allowed opacity-40'
-                      )}
-                    >
-                      <span className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">
-                        {format(day, 'EEE')}
-                      </span>
-                      <span
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => {
+                          if (!hasSlots) return
+                          setSelectedDate(dateStr)
+                          setSelectedSlot(null)
+                        }}
+                        disabled={!hasSlots}
                         className={cn(
-                          'text-lg font-bold',
-                          isSelected ? 'text-white' : hasSlots ? 'text-white' : 'text-gray-600'
+                          'relative flex flex-col items-center py-3 rounded-2xl border transition-all w-[52px] shrink-0',
+                          isSelected
+                            ? 'bg-brand border-brand text-white shadow-elevation-md'
+                            : hasSlots
+                            ? 'bg-surface-2 border-white/[0.07] hover:border-brand/50 cursor-pointer'
+                            : 'bg-surface-1 border-white/[0.04] cursor-not-allowed opacity-35'
                         )}
                       >
-                        {format(day, 'd')}
-                      </span>
-                      {isToday && !isSelected && (
-                        <span className="absolute bottom-1.5 w-1 h-1 bg-brand rounded-full" />
-                      )}
-                      {hasSlots && !isSelected && (
-                        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand rounded-full" />
-                      )}
-                    </button>
-                  )
-                })}
+                        <span className={cn(
+                          'text-[10px] uppercase tracking-wider mb-1',
+                          isSelected ? 'text-white/80' : 'text-gray-500'
+                        )}>
+                          {format(day, 'EEE')}
+                        </span>
+                        <span className={cn(
+                          'text-base font-bold leading-none',
+                          isSelected ? 'text-white' : hasSlots ? 'text-white' : 'text-gray-600'
+                        )}>
+                          {format(day, 'd')}
+                        </span>
+                        <span className={cn(
+                          'text-[9px] mt-1',
+                          isSelected ? 'text-white/70' : 'text-gray-600'
+                        )}>
+                          {format(day, 'MMM')}
+                        </span>
+                        {isToday && !isSelected && (
+                          <span className="absolute bottom-1.5 w-1 h-1 bg-brand rounded-full" />
+                        )}
+                        {hasSlots && !isSelected && (
+                          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand rounded-full" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Time slots */}
@@ -362,10 +329,10 @@ export default function BookPage() {
                           key={slot.id}
                           onClick={() => setSelectedSlot(slot)}
                           className={cn(
-                            'py-3 px-4 rounded-xl border text-sm font-semibold transition-all',
+                            'py-3 px-4 rounded-2xl border text-sm font-semibold transition-all',
                             isSelected
                               ? 'bg-brand border-brand text-white'
-                              : 'bg-[#111] border-[#2a2a2a] text-gray-300 hover:border-brand/60 hover:text-white'
+                              : 'bg-surface-2 border-white/[0.07] text-gray-300 hover:border-brand/50 hover:text-white'
                           )}
                         >
                           {formatTime(slot.slot_time)}
@@ -386,19 +353,9 @@ export default function BookPage() {
                 </div>
               )}
 
-              {!availableDates.some((d) =>
-                week.some((day) => format(day, 'yyyy-MM-dd') === d)
-              ) && (
+              {availableDates.length === 0 && (
                 <div className="text-center py-10">
-                  <p className="text-gray-500">No openings this week.</p>
-                  {calendarOffset === 0 && (
-                    <button
-                      onClick={() => setCalendarOffset(1)}
-                      className="mt-3 text-brand hover:text-brand-light text-sm underline"
-                    >
-                      Check next week
-                    </button>
-                  )}
+                  <p className="text-gray-500">No openings in the next two weeks.</p>
                 </div>
               )}
             </>
