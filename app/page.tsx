@@ -98,8 +98,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-white font-bold text-xl mb-2">Interior Detail</h3>
               <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-                Full vacuum, wipe-down, window cleaning, and deep interior clean. Your cabin
-                will look and smell brand new.
+                Full vacuum, carpet shampoo, drill brush cleaning, wipe-down, and window cleaning. Your cabin will look and smell brand new.
               </p>
               <div className="border-t border-white/[0.06] pt-5 flex justify-between items-center">
                 <div>
@@ -125,8 +124,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-white font-bold text-xl mb-2">Exterior Detail</h3>
               <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-                Hand wash, wheel clean, tire dressing, and exterior wipe-down. Your paint
-                will turn heads.
+                Includes door jambs, wheels, foam cannon rinse, and foam agitation wash to restore your car&apos;s shine.
               </p>
               <div className="border-t border-white/[0.06] pt-5 flex justify-between items-center">
                 <div>
