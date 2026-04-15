@@ -47,7 +47,7 @@ function getRequiredPhotos(services: ServiceType[]): string[] {
   const needsExterior = services.includes('Exterior Detail') || services.includes('Both')
   const required: string[] = []
   if (needsInterior) required.push('Front Seats', 'Back Seats', 'Trunk')
-  if (needsExterior) required.push('Front of Vehicle', 'Rear of Vehicle')
+  if (needsExterior) required.push('Front of Vehicle', 'Rear of Vehicle', 'Side of Vehicle')
   return required
 }
 
@@ -142,14 +142,12 @@ export default function BookPage() {
       return
     }
 
-    // Validate photos if dirtiness is 7+
+    // Validate photos — always required
     const requiredPhotos = getRequiredPhotos(form.services)
-    if (form.dirt_rating >= 7 && form.services.length > 0) {
-      const missing = requiredPhotos.filter((p) => !photos[p])
-      if (missing.length > 0) {
-        setError(`Please upload the following photo${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`)
-        return
-      }
+    const missing = requiredPhotos.filter((p) => !photos[p])
+    if (missing.length > 0) {
+      setError(`Please upload the following photo${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`)
+      return
     }
 
     setSubmitting(true)
@@ -158,7 +156,7 @@ export default function BookPage() {
     try {
       // Upload photos to Supabase Storage
       let photoUrls: string[] = []
-      if (form.dirt_rating >= 7 && Object.keys(photos).length > 0) {
+      if (Object.keys(photos).length > 0) {
         const supabase = createClient()
         const uploadId = crypto.randomUUID()
 
@@ -258,7 +256,7 @@ export default function BookPage() {
           ) : (
             <>
               {/* Scrollable 14-day strip */}
-              <div className="overflow-x-auto pb-2 -mx-4 px-4 mb-8">
+              <div className="overflow-x-auto scrollbar-thin-x pb-2 -mx-4 px-4 mb-8">
                 <div className="flex gap-2.5" style={{ minWidth: 'max-content' }}>
                   {days.map((day) => {
                     const dateStr = format(day, 'yyyy-MM-dd')
@@ -317,10 +315,10 @@ export default function BookPage() {
               {/* Time slots */}
               {selectedDate && (
                 <div>
-                  <p className="text-white font-semibold mb-4">
-                    Available times on{' '}
-                    <span className="text-brand">{formatDateShort(selectedDate)}</span>
-                  </p>
+                  <div className="mb-4">
+                    <p className="text-gray-500 text-xs uppercase tracking-widest mb-1">Available times</p>
+                    <p className="text-white font-bold text-lg">{formatDateShort(selectedDate)}</p>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
                     {slotsForDate(selectedDate).map((slot) => {
                       const isSelected = selectedSlot?.id === slot.id
@@ -415,7 +413,7 @@ export default function BookPage() {
               required
               value={form.client_address}
               onChange={(v) => setForm((f) => ({ ...f, client_address: v }))}
-              placeholder="123 Main St, Houston TX 77001"
+              placeholder="123 Main St, Knoxville TN 37901"
             />
           </Section>
 
@@ -468,34 +466,13 @@ export default function BookPage() {
               </div>
             </div>
 
-            {/* Dirt rating */}
-            <div>
-              <label className="text-sm text-gray-400 block mb-2">
-                How dirty is it?{' '}
-                <span className="text-brand font-bold text-base">{form.dirt_rating}/10</span>
-              </label>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={form.dirt_rating}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, dirt_rating: parseInt(e.target.value) }))
-                }
-                className="w-full accent-brand"
-              />
-              <div className="flex justify-between text-xs text-gray-600 mt-1">
-                <span>1 — Barely dirty</span>
-                <span>10 — Disaster</span>
-              </div>
-            </div>
           </Section>
 
-          {/* Photo uploads — required when dirtiness is 7+ and services are selected */}
-          {form.dirt_rating >= 7 && form.services.length > 0 && (
-            <Section title={`Vehicle Photos Required (${form.dirt_rating}/10 dirtiness)`}>
+          {/* Photo uploads — required whenever services are selected */}
+          {form.services.length > 0 && (
+            <Section title="Vehicle Photos Required">
               <p className="text-gray-400 text-sm leading-relaxed">
-                Because your vehicle is rated <span className="text-white font-medium">{form.dirt_rating}/10</span>, we need photos so we can prepare properly. Please upload a clear photo for each angle below.
+                Please upload a clear photo for each angle below so we can prepare properly.
               </p>
               <div className="flex gap-2.5 bg-brand/5 border border-brand/20 rounded-2xl px-4 py-3">
                 <span className="text-brand text-sm mt-0.5 shrink-0">*</span>
@@ -674,6 +651,19 @@ export default function BookPage() {
               className="w-full bg-[#111] border border-[#2a2a2a] hover:border-[#3a3a3a] focus:border-brand rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 resize-none outline-none transition-colors"
             />
           </Section>
+
+          {/* Payment methods */}
+          <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-5 space-y-3">
+            <p className="text-white font-bold text-base">Accepted Payment Methods</p>
+            <p className="text-gray-500 text-sm">Payment is due at the time of service.</p>
+            <div className="flex flex-wrap gap-2">
+              {['Cash', 'Venmo', 'Check', 'PayPal', 'Cash App', 'Apple Pay', 'Zelle'].map((method) => (
+                <span key={method} className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg">
+                  {method}
+                </span>
+              ))}
+            </div>
+          </div>
 
           {/* Pricing disclaimer */}
           <p className="text-gray-600 text-xs leading-relaxed text-center px-2">

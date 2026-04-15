@@ -39,13 +39,36 @@ html {
 body {
   background-color: var(--surface-0);
   color: #f0f0f2;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-in {
+  animation: fadeIn 0.65s ease both;
+}
+.delay-100 { animation-delay: 0.10s; }
+.delay-200 { animation-delay: 0.20s; }
+.delay-300 { animation-delay: 0.32s; }
+.delay-400 { animation-delay: 0.45s; }
+.delay-500 { animation-delay: 0.58s; }
+.delay-600 { animation-delay: 0.72s; }
+
+/* Custom scrollbar — page-level */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 3px;
 }
 ::-webkit-scrollbar-track {
   background: #0d0d0d;
@@ -53,6 +76,22 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #3a4a4a;
   border-radius: 3px;
+}
+
+/* Thin horizontal scrollbar for strips */
+.scrollbar-thin-x {
+  scrollbar-width: thin;
+  scrollbar-color: #3a4a4a #0d0d0d;
+}
+.scrollbar-thin-x::-webkit-scrollbar {
+  height: 2px;
+}
+.scrollbar-thin-x::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+.scrollbar-thin-x::-webkit-scrollbar-thumb {
+  background: #3a4a4a;
+  border-radius: 2px;
 }
 
 /* Focus ring */
