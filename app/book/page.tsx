@@ -655,7 +655,7 @@ export default function BookPage() {
           {/* Payment methods */}
           <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-5 space-y-3">
             <p className="text-white font-bold text-base">Accepted Payment Methods</p>
-            <p className="text-gray-500 text-sm">Payment is due at the time of service.</p>
+            <p className="text-gray-500 text-sm">Payment is due at the time of service. Tips are always appreciated!</p>
             <div className="flex flex-wrap gap-2">
               {['Cash', 'Venmo', 'Check', 'PayPal', 'Cash App', 'Apple Pay', 'Zelle'].map((method) => (
                 <span key={method} className="bg-[#1a1a1a] border border-[#2a2a2a] text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg">

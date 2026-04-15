@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { addDays, format, startOfDay } from 'date-fns'
-import { Loader2, LogOut, Plus, Trash2, Lock, BarChart2, CalendarDays } from 'lucide-react'
+import { Loader2, LogOut, Plus, Trash2, Lock, BarChart2, CalendarDays, Check, Pencil } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { cn, formatTime, getSlotsForDate } from '@/lib/utils'
-import type { AvailabilitySlot } from '@/lib/types'
+import { cn, formatTime, getSlotsForDate, calculateTotal, formatDate } from '@/lib/utils'
+import type { AvailabilitySlot, ServiceType, AddonType, VehicleType } from '@/lib/types'
 
 // Postgres returns TIME as 'HH:MM:SS' — strip to 'HH:MM' for consistent comparisons
 function normalizeSlot(slot: AvailabilitySlot): AvailabilitySlot {
@@ -16,6 +16,20 @@ function normalizeSlot(slot: AvailabilitySlot): AvailabilitySlot {
 }
 
 type WeekStat = { week: string; label: string; revenue: number; jobs: number }
+type StatsRange = '2w' | '1m' | '3m' | '6m' | '1y'
+type RecentJob = {
+  id: string
+  slot_date: string
+  slot_time: string
+  client_name: string
+  car_year: string | null
+  car_make: string
+  car_model: string
+  vehicle_type: VehicleType
+  services: ServiceType[]
+  addons: AddonType[] | null
+  final_price: number | null
+}
 
 export default function AdminPage() {
   const [password, setPassword] = useState('')
@@ -28,6 +42,10 @@ export default function AdminPage() {
   const [tab, setTab] = useState<'schedule' | 'dashboard'>('schedule')
   const [stats, setStats] = useState<WeekStat[] | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [statsRange, setStatsRange] = useState<StatsRange>('2w')
+  const [recentJobs, setRecentJobs] = useState<RecentJob[] | null>(null)
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [editingPrice, setEditingPrice] = useState<Record<string, string>>({})
 
   const today = startOfDay(new Date())
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
@@ -50,10 +68,10 @@ export default function AdminPage() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchStats = useCallback(async (pw: string) => {
+  const fetchStats = useCallback(async (pw: string, range: StatsRange) => {
     setStatsLoading(true)
     try {
-      const res = await fetch('/api/admin/stats', {
+      const res = await fetch(`/api/admin/stats?range=${range}`, {
         headers: { 'x-admin-password': pw },
       })
       if (!res.ok) throw new Error()
@@ -66,11 +84,50 @@ export default function AdminPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (authed && tab === 'dashboard' && stats === null) {
-      fetchStats(password)
+  const fetchJobs = useCallback(async (pw: string) => {
+    setJobsLoading(true)
+    try {
+      const res = await fetch('/api/admin/jobs', {
+        headers: { 'x-admin-password': pw },
+      })
+      if (!res.ok) throw new Error()
+      const json = await res.json()
+      setRecentJobs(json.jobs ?? [])
+    } catch {
+      setRecentJobs([])
+    } finally {
+      setJobsLoading(false)
     }
-  }, [authed, tab, stats, password, fetchStats])
+  }, [])
+
+  useEffect(() => {
+    if (authed && tab === 'dashboard') {
+      fetchStats(password, statsRange)
+    }
+  }, [authed, tab, statsRange, password, fetchStats])
+
+  useEffect(() => {
+    if (authed && tab === 'dashboard' && recentJobs === null) {
+      fetchJobs(password)
+    }
+  }, [authed, tab, recentJobs, password, fetchJobs])
+
+  async function savePrice(jobId: string) {
+    const raw = editingPrice[jobId]
+    const res = await fetch('/api/admin/jobs', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify({ id: jobId, final_price: raw === '' ? null : raw }),
+    })
+    if (res.ok) {
+      setRecentJobs((prev) =>
+        prev?.map((j) => j.id === jobId ? { ...j, final_price: raw === '' ? null : Number(raw) } : j) ?? null
+      )
+      setEditingPrice((prev) => { const next = { ...prev }; delete next[jobId]; return next })
+      // Refresh stats so charts pick up new price
+      fetchStats(password, statsRange)
+    }
+  }
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -150,24 +207,29 @@ export default function AdminPage() {
   // ── LOGIN ────────────────────────────────────────────────────────────────
   if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-sm w-full">
+      <div className="min-h-screen flex items-center justify-center px-4 bg-[#0a0a0a]">
+        {/* Ambient glow */}
+        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] rounded-full bg-brand/8 blur-[80px] pointer-events-none" />
+
+        <div className="relative max-w-sm w-full">
           <div className="text-center mb-8">
             <Image
-              src="/logo/logo-wo-text.jpeg"
+              src="/logo/detailing_logo_dark_no_bg.png"
               alt="Marlow's Detailing"
-              width={64}
-              height={64}
-              className="rounded-lg mx-auto mb-4"
+              width={160}
+              height={160}
+              className="mx-auto mb-5 drop-shadow-[0_4px_24px_rgba(82,116,116,0.4)]"
             />
-            <h1 className="text-2xl font-extrabold text-white">Admin</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage your availability</p>
+            <h1 className="font-display font-extrabold uppercase text-white text-4xl leading-none mb-1">
+              Admin
+            </h1>
+            <p className="text-gray-500 text-sm">Manage your availability</p>
           </div>
 
-          <form onSubmit={handleLogin} className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-6 space-y-4">
+          <form onSubmit={handleLogin} className="bg-surface-2 border border-white/[0.07] rounded-2xl p-6 space-y-4">
             <div>
-              <label className="text-sm text-gray-400 block mb-1.5">
-                <Lock size={12} className="inline mr-1.5" />Password
+              <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2 flex items-center gap-1.5">
+                <Lock size={11} /> Password
               </label>
               <input
                 type="password"
@@ -175,14 +237,14 @@ export default function AdminPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin password"
                 autoFocus
-                className="w-full bg-[#0a0a0a] border border-[#2a2a2a] focus:border-brand rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 outline-none transition-colors"
+                className="w-full bg-surface-1 border border-white/[0.07] hover:border-white/[0.12] focus:border-brand rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none transition-colors"
               />
             </div>
             {authError && <p className="text-red-400 text-sm">{authError}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand hover:bg-brand-light text-white font-bold py-3 rounded-full transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-brand hover:bg-brand-light text-white font-semibold py-[15px] rounded-2xl transition-colors flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : 'Sign In'}
             </button>
@@ -196,11 +258,16 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen px-4 pt-20 pb-16">
       <div className="max-w-3xl mx-auto">
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-extrabold text-white">Admin Portal</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Marlow&apos;s Detailing</p>
+            <p className="text-brand text-[11px] font-semibold uppercase tracking-[0.22em] mb-1">
+              Marlow&apos;s Detailing
+            </p>
+            <h1 className="font-display font-extrabold uppercase text-white text-3xl leading-none">
+              Admin Portal
+            </h1>
           </div>
           <button
             onClick={() => { setAuthed(false); setPassword('') }}
@@ -211,14 +278,12 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-[#111] border border-[#2a2a2a] rounded-xl p-1 mb-8 w-fit">
+        <div className="flex gap-1 bg-surface-2 border border-white/[0.07] rounded-xl p-1 mb-8 w-fit">
           <button
             onClick={() => setTab('schedule')}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all',
-              tab === 'schedule'
-                ? 'bg-brand text-white shadow'
-                : 'text-gray-400 hover:text-white'
+              tab === 'schedule' ? 'bg-brand text-white' : 'text-gray-400 hover:text-white'
             )}
           >
             <CalendarDays size={15} /> Schedule
@@ -227,9 +292,7 @@ export default function AdminPage() {
             onClick={() => setTab('dashboard')}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all',
-              tab === 'dashboard'
-                ? 'bg-brand text-white shadow'
-                : 'text-gray-400 hover:text-white'
+              tab === 'dashboard' ? 'bg-brand text-white' : 'text-gray-400 hover:text-white'
             )}
           >
             <BarChart2 size={15} /> Dashboard
@@ -244,23 +307,30 @@ export default function AdminPage() {
             </p>
 
             {/* Legend */}
-            <div className="flex gap-4 mb-6 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-4 mb-6 text-xs text-gray-500">
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-brand" /> Available
+                <span className="w-2.5 h-2.5 rounded bg-brand" /> Open
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-500/70" /> Booked
+                <span className="w-2.5 h-2.5 rounded bg-amber-500/60" /> Partial
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-[#1a1a1a] border border-[#2a2a2a]" /> Closed
+                <span className="w-2.5 h-2.5 rounded bg-red-500/70" /> Fully Booked
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-surface-3 border border-white/[0.07]" /> Closed
               </span>
             </div>
 
             {/* Date pills */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+            <div className="flex gap-2 overflow-x-auto scrollbar-thin-x pb-2 mb-6">
               {days.map((day) => {
                 const dateStr = format(day, 'yyyy-MM-dd')
-                const hasSlots = slots.some((s) => s.slot_date === dateStr)
+                const daySlots = slots.filter((s) => s.slot_date === dateStr)
+                const hasSlots = daySlots.length > 0
+                const bookedCount = daySlots.filter((s) => s.is_booked).length
+                const isFullyBooked = hasSlots && bookedCount === daySlots.length
+                const isPartiallyBooked = hasSlots && bookedCount > 0 && bookedCount < daySlots.length
                 const isSelected = selectedDate === dateStr
                 return (
                   <button
@@ -270,9 +340,13 @@ export default function AdminPage() {
                       'shrink-0 px-4 py-2 rounded-full text-sm font-medium border transition-all',
                       isSelected
                         ? 'bg-brand border-brand text-white'
+                        : isFullyBooked
+                        ? 'bg-red-500/15 border-red-500/40 text-red-400 hover:border-red-500/60'
+                        : isPartiallyBooked
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:border-amber-500/50'
                         : hasSlots
                         ? 'bg-brand/10 border-brand/30 text-brand hover:border-brand/60'
-                        : 'bg-[#111] border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a]'
+                        : 'bg-surface-2 border-white/[0.07] text-gray-500 hover:border-white/[0.15]'
                     )}
                   >
                     {format(day, 'EEE d')}
@@ -284,9 +358,12 @@ export default function AdminPage() {
             {/* Time grid for selected date */}
             {selectedDate ? (
               <div>
-                <p className="text-white font-semibold mb-4">
-                  {format(new Date(selectedDate + 'T12:00:00'), 'EEEE, MMMM d')}
-                </p>
+                <div className="mb-4">
+                  <p className="text-gray-500 text-xs uppercase tracking-widest mb-0.5">Slots for</p>
+                  <p className="text-white font-bold text-lg">
+                    {format(new Date(selectedDate + 'T12:00:00'), 'EEEE, MMMM d')}
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {getSlotsForDate(selectedDate).map((time) => {
                     const status = slotStatus(selectedDate, time)
@@ -295,18 +372,15 @@ export default function AdminPage() {
                     return (
                       <button
                         key={time}
-                        onClick={() => {
-                          if (status === 'booked') return
-                          toggleSlot(selectedDate, time)
-                        }}
+                        onClick={() => { if (status !== 'booked') toggleSlot(selectedDate, time) }}
                         disabled={status === 'booked' || isSaving}
                         className={cn(
-                          'relative py-3 rounded-xl border text-sm font-semibold transition-all flex flex-col items-center gap-1',
+                          'relative py-4 rounded-xl border text-sm font-semibold transition-all flex flex-col items-center gap-1',
                           status === 'available'
                             ? 'bg-brand/15 border-brand text-white'
                             : status === 'booked'
-                            ? 'bg-red-500/10 border-red-500/50 text-red-400 cursor-not-allowed'
-                            : 'bg-[#111] border-[#2a2a2a] text-gray-500 hover:border-brand/40 hover:text-gray-300'
+                            ? 'bg-red-500/10 border-red-500/40 text-red-400 cursor-not-allowed'
+                            : 'bg-surface-2 border-white/[0.07] text-gray-500 hover:border-brand/40 hover:text-gray-300'
                         )}
                       >
                         {isSaving ? (
@@ -314,14 +388,14 @@ export default function AdminPage() {
                         ) : (
                           <>
                             <span>{formatTime(time)}</span>
-                            <span className="text-[10px] opacity-60">
+                            <span className="text-[10px] opacity-50 font-normal">
                               {status === 'available' ? 'Open' : status === 'booked' ? 'Booked' : 'Closed'}
                             </span>
                             {status === 'available' && (
-                              <Trash2 size={10} className="absolute top-1.5 right-1.5 text-brand/40" />
+                              <Trash2 size={10} className="absolute top-2 right-2 text-brand/40" />
                             )}
                             {status === 'empty' && (
-                              <Plus size={10} className="absolute top-1.5 right-1.5 text-gray-600" />
+                              <Plus size={10} className="absolute top-2 right-2 text-gray-600" />
                             )}
                           </>
                         )}
@@ -331,8 +405,8 @@ export default function AdminPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-16 text-gray-600">
-                <p>Select a date above to manage time slots.</p>
+              <div className="text-center py-16 text-gray-600 text-sm">
+                Select a date above to manage time slots.
               </div>
             )}
           </>
@@ -340,53 +414,59 @@ export default function AdminPage() {
 
         {/* ── DASHBOARD TAB ────────────────────────────────────────────────── */}
         {tab === 'dashboard' && (
-          <>
+          <div className="space-y-6">
+            {/* Range selector */}
+            <div className="flex gap-1 bg-surface-2 border border-white/[0.07] rounded-xl p-1 w-fit">
+              {(['2w', '1m', '3m', '6m', '1y'] as StatsRange[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setStatsRange(r)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-semibold uppercase transition-all',
+                    statsRange === r ? 'bg-brand text-white' : 'text-gray-400 hover:text-white'
+                  )}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
             {statsLoading || stats === null ? (
               <div className="flex items-center justify-center py-24">
                 <Loader2 size={24} className="animate-spin text-brand" />
               </div>
             ) : (
-              <div className="space-y-10">
+              <>
                 {/* Summary cards */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-5">
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-1">
-                      8-Week Revenue
+                  <div className="bg-surface-2 border border-white/[0.07] rounded-2xl p-5">
+                    <p className="text-brand text-[11px] font-semibold uppercase tracking-[0.18em] mb-2">
+                      Revenue
                     </p>
-                    <p className="text-3xl font-extrabold text-white">
+                    <p className="font-display font-extrabold uppercase text-white text-4xl leading-none">
                       ${stats.reduce((s, w) => s + w.revenue, 0)}
                     </p>
                   </div>
-                  <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-5">
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-1">
-                      8-Week Jobs
+                  <div className="bg-surface-2 border border-white/[0.07] rounded-2xl p-5">
+                    <p className="text-brand text-[11px] font-semibold uppercase tracking-[0.18em] mb-2">
+                      Jobs
                     </p>
-                    <p className="text-3xl font-extrabold text-white">
+                    <p className="font-display font-extrabold uppercase text-white text-4xl leading-none">
                       {stats.reduce((s, w) => s + w.jobs, 0)}
                     </p>
                   </div>
                 </div>
 
-                {/* Weekly Revenue Chart */}
-                <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-6">
-                  <p className="text-white font-bold mb-6">Weekly Revenue</p>
+                {/* Revenue chart */}
+                <div className="bg-surface-2 border border-white/[0.07] rounded-2xl p-6">
+                  <p className="font-display font-bold uppercase text-white text-lg mb-6">Revenue</p>
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={stats} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        axisLine={false}
-                        tickLine={false}
-                        tickFormatter={(v) => `$${v}`}
-                      />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1f1f25" />
+                      <XAxis dataKey="label" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8 }}
+                        contentStyle={{ backgroundColor: '#18181d', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12 }}
                         labelStyle={{ color: '#e5e7eb', fontWeight: 600 }}
                         itemStyle={{ color: '#527474' }}
                         formatter={(value) => [`$${value}`, 'Revenue']}
@@ -396,26 +476,16 @@ export default function AdminPage() {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Weekly Jobs Chart */}
-                <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-6">
-                  <p className="text-white font-bold mb-6">Weekly Jobs</p>
+                {/* Jobs chart */}
+                <div className="bg-surface-2 border border-white/[0.07] rounded-2xl p-6">
+                  <p className="font-display font-bold uppercase text-white text-lg mb-6">Jobs</p>
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={stats} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1f1f25" />
+                      <XAxis dataKey="label" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis allowDecimals={false} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8 }}
+                        contentStyle={{ backgroundColor: '#18181d', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12 }}
                         labelStyle={{ color: '#e5e7eb', fontWeight: 600 }}
                         itemStyle={{ color: '#527474' }}
                         formatter={(value) => [value, 'Jobs']}
@@ -424,9 +494,77 @@ export default function AdminPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </>
             )}
-          </>
+
+            {/* Recent jobs */}
+            <div className="bg-surface-2 border border-white/[0.07] rounded-2xl p-6">
+              <p className="font-display font-bold uppercase text-white text-lg mb-5">Recent Jobs</p>
+              {jobsLoading || recentJobs === null ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 size={20} className="animate-spin text-brand" />
+                </div>
+              ) : recentJobs.length === 0 ? (
+                <p className="text-gray-600 text-sm text-center py-8">No confirmed jobs yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentJobs.map((job) => {
+                    const base = calculateTotal(job.vehicle_type, job.services, job.addons ?? [])
+                    const displayed = job.final_price ?? base
+                    const isEditing = job.id in editingPrice
+                    return (
+                      <div key={job.id} className="bg-surface-1 border border-white/[0.06] rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="text-white font-semibold text-sm truncate">{job.client_name}</p>
+                            <span className="text-gray-600 text-xs shrink-0">{formatDate(job.slot_date)}</span>
+                          </div>
+                          <p className="text-gray-500 text-xs truncate">
+                            {[job.car_year, job.car_make, job.car_model].filter(Boolean).join(' ')} · {job.services.join(', ')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isEditing ? (
+                            <>
+                              <span className="text-gray-500 text-sm">$</span>
+                              <input
+                                type="number"
+                                value={editingPrice[job.id]}
+                                onChange={(e) => setEditingPrice((prev) => ({ ...prev, [job.id]: e.target.value }))}
+                                className="w-20 bg-surface-3 border border-brand/40 focus:border-brand rounded-lg px-2 py-1 text-white text-sm outline-none text-right"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => savePrice(job.id)}
+                                className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center hover:bg-brand-light transition-colors"
+                              >
+                                <Check size={13} className="text-white" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-right">
+                                <span className="font-display font-bold text-white text-lg">${displayed}</span>
+                                {job.final_price !== null && job.final_price !== base && (
+                                  <span className="text-gray-600 text-xs ml-1.5 line-through">${base}</span>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => setEditingPrice((prev) => ({ ...prev, [job.id]: String(displayed) }))}
+                                className="w-7 h-7 bg-surface-3 border border-white/[0.07] rounded-lg flex items-center justify-center hover:border-brand/40 transition-colors"
+                              >
+                                <Pencil size={12} className="text-gray-500" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
