@@ -145,11 +145,14 @@ export default function AdminPage() {
       body: JSON.stringify({ id: jobId, final_price: raw === '' ? null : raw }),
     })
     if (res.ok) {
+      const newPrice = raw === '' ? null : Number(raw)
       setRecentJobs((prev) =>
-        prev?.map((j) => j.id === jobId ? { ...j, final_price: raw === '' ? null : Number(raw) } : j) ?? null
+        prev?.map((j) => j.id === jobId ? { ...j, final_price: newPrice } : j) ?? null
+      )
+      setUpcomingJobs((prev) =>
+        prev?.map((j) => j.id === jobId ? { ...j, final_price: newPrice } : j) ?? null
       )
       setEditingPrice((prev) => { const next = { ...prev }; delete next[jobId]; return next })
-      // Refresh stats so charts pick up new price
       fetchStats(password, statsRange)
     }
   }
@@ -467,7 +470,36 @@ export default function AdminPage() {
                               {formatDate(job.slot_date)} · {formatTime(job.slot_time)}
                             </p>
                           </div>
-                          <span className="font-display font-bold text-white text-lg shrink-0">${price}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {job.id in editingPrice ? (
+                              <>
+                                <span className="text-gray-500 text-sm">$</span>
+                                <input
+                                  type="number"
+                                  value={editingPrice[job.id]}
+                                  onChange={(e) => setEditingPrice((prev) => ({ ...prev, [job.id]: e.target.value }))}
+                                  className="w-20 bg-surface-3 border border-brand/40 focus:border-brand rounded-lg px-2 py-1 text-white text-sm outline-none text-right"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => savePrice(job.id)}
+                                  className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center hover:bg-brand-light transition-colors"
+                                >
+                                  <Check size={13} className="text-white" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-display font-bold text-white text-lg">${price}</span>
+                                <button
+                                  onClick={() => setEditingPrice((prev) => ({ ...prev, [job.id]: String(price) }))}
+                                  className="w-7 h-7 bg-surface-3 border border-white/[0.07] rounded-lg flex items-center justify-center hover:border-brand/40 transition-colors"
+                                >
+                                  <Pencil size={12} className="text-gray-500" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                         <p className="text-gray-500 text-xs">
                           {[job.car_year, job.car_make, job.car_model].filter(Boolean).join(' ')} · {job.services.join(', ')}
