@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { addDays, format, startOfDay } from 'date-fns'
-import { Loader2, LogOut, Plus, Trash2, Lock, BarChart2, CalendarDays, Check, Pencil } from 'lucide-react'
+import { Loader2, LogOut, Plus, Trash2, Lock, BarChart2, CalendarDays } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -48,6 +48,8 @@ export default function AdminPage() {
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({})
   const [upcomingJobs, setUpcomingJobs] = useState<(RecentJob & { client_phone: string; message: string | null; status: string })[] | null>(null)
   const [upcomingLoading, setUpcomingLoading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   const today = startOfDay(new Date())
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
@@ -155,6 +157,30 @@ export default function AdminPage() {
       setEditingPrice((prev) => { const next = { ...prev }; delete next[jobId]; return next })
       fetchStats(password, statsRange)
     }
+  }
+
+  async function deleteJob(jobId: string) {
+    setDeleting(jobId)
+    const res = await fetch('/api/admin/jobs', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify({ id: jobId }),
+    })
+    if (res.ok) {
+      setUpcomingJobs((prev) => prev?.filter((j) => j.id !== jobId) ?? null)
+      // Refresh slots so the calendar reflects the freed slot
+      const from = format(today, 'yyyy-MM-dd')
+      const to = format(addDays(today, 14), 'yyyy-MM-dd')
+      const slotsRes = await fetch(`/api/admin/slots?from=${from}&to=${to}`, {
+        headers: { 'x-admin-password': password },
+      })
+      if (slotsRes.ok) {
+        const json = await slotsRes.json()
+        setSlots((json.slots ?? []).map(normalizeSlot))
+      }
+    }
+    setDeleting(null)
+    setConfirmDelete(null)
   }
 
   function handleLogin(e: React.SyntheticEvent) {
@@ -470,35 +496,18 @@ export default function AdminPage() {
                               {formatDate(job.slot_date)} · {formatTime(job.slot_time)}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {job.id in editingPrice ? (
-                              <>
-                                <span className="text-gray-500 text-sm">$</span>
-                                <input
-                                  type="number"
-                                  value={editingPrice[job.id]}
-                                  onChange={(e) => setEditingPrice((prev) => ({ ...prev, [job.id]: e.target.value }))}
-                                  className="w-20 bg-surface-3 border border-brand/40 focus:border-brand rounded-lg px-2 py-1 text-white text-sm outline-none text-right"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => savePrice(job.id)}
-                                  className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center hover:bg-brand-light transition-colors"
-                                >
-                                  <Check size={13} className="text-white" />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <span className="font-display font-bold text-white text-lg">${price}</span>
-                                <button
-                                  onClick={() => setEditingPrice((prev) => ({ ...prev, [job.id]: String(price) }))}
-                                  className="w-7 h-7 bg-surface-3 border border-white/[0.07] rounded-lg flex items-center justify-center hover:border-brand/40 transition-colors"
-                                >
-                                  <Pencil size={12} className="text-gray-500" />
-                                </button>
-                              </>
-                            )}
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <span className="font-display font-bold text-white text-lg">$</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={editingPrice[job.id] ?? String(price)}
+                              onFocus={() => setEditingPrice((prev) => ({ ...prev, [job.id]: String(price) }))}
+                              onChange={(e) => setEditingPrice((prev) => ({ ...prev, [job.id]: e.target.value }))}
+                              onBlur={() => { if (job.id in editingPrice) savePrice(job.id) }}
+                              onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                              className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-brand/60 outline-none font-display font-bold text-white text-lg text-right w-20 cursor-text transition-colors"
+                            />
                           </div>
                         </div>
                         <p className="text-gray-500 text-xs">
@@ -506,6 +515,33 @@ export default function AdminPage() {
                         </p>
                         {job.message && (
                           <p className="text-gray-600 text-xs italic">&ldquo;{job.message}&rdquo;</p>
+                        )}
+                        {/* Delete / confirm row */}
+                        {confirmDelete === job.id ? (
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-gray-500 text-xs">Cancel this job?</span>
+                            <button
+                              onClick={() => deleteJob(job.id)}
+                              disabled={deleting === job.id}
+                              className="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                            >
+                              {deleting === job.id ? 'Deleting…' : 'Yes, delete'}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+                            >
+                              Keep it
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDelete(job.id)}
+                            className="flex items-center gap-1 text-gray-700 hover:text-red-400 text-xs transition-colors pt-1"
+                          >
+                            <Trash2 size={11} />
+                            Cancel job
+                          </button>
                         )}
                       </div>
                     )
@@ -615,7 +651,6 @@ export default function AdminPage() {
                   {recentJobs.map((job) => {
                     const base = calculateTotal(job.vehicle_type, job.services, job.addons ?? [])
                     const displayed = job.final_price ?? base
-                    const isEditing = job.id in editingPrice
                     return (
                       <div key={job.id} className="bg-surface-1 border border-white/[0.06] rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
                         <div className="flex-1 min-w-0">
@@ -627,39 +662,20 @@ export default function AdminPage() {
                             {[job.car_year, job.car_make, job.car_model].filter(Boolean).join(' ')} · {job.services.join(', ')}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {isEditing ? (
-                            <>
-                              <span className="text-gray-500 text-sm">$</span>
-                              <input
-                                type="number"
-                                value={editingPrice[job.id]}
-                                onChange={(e) => setEditingPrice((prev) => ({ ...prev, [job.id]: e.target.value }))}
-                                className="w-20 bg-surface-3 border border-brand/40 focus:border-brand rounded-lg px-2 py-1 text-white text-sm outline-none text-right"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() => savePrice(job.id)}
-                                className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center hover:bg-brand-light transition-colors"
-                              >
-                                <Check size={13} className="text-white" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="text-right">
-                                <span className="font-display font-bold text-white text-lg">${displayed}</span>
-                                {job.final_price !== null && job.final_price !== base && (
-                                  <span className="text-gray-600 text-xs ml-1.5 line-through">${base}</span>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => setEditingPrice((prev) => ({ ...prev, [job.id]: String(displayed) }))}
-                                className="w-7 h-7 bg-surface-3 border border-white/[0.07] rounded-lg flex items-center justify-center hover:border-brand/40 transition-colors"
-                              >
-                                <Pencil size={12} className="text-gray-500" />
-                              </button>
-                            </>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <span className="font-display font-bold text-white text-lg">$</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={editingPrice[job.id] ?? String(displayed)}
+                            onFocus={() => setEditingPrice((prev) => ({ ...prev, [job.id]: String(displayed) }))}
+                            onChange={(e) => setEditingPrice((prev) => ({ ...prev, [job.id]: e.target.value }))}
+                            onBlur={() => { if (job.id in editingPrice) savePrice(job.id) }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                            className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-brand/60 outline-none font-display font-bold text-white text-lg text-right w-20 cursor-text transition-colors"
+                          />
+                          {job.final_price !== null && job.final_price !== base && (
+                            <span className="text-gray-600 text-xs ml-1.5 line-through">${base}</span>
                           )}
                         </div>
                       </div>

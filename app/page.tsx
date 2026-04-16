@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Car, Sparkles, CheckCircle, Droplets, ArrowRight, Phone, Truck } from 'lucide-react'
 import { PRICING, ADDON_PRICING, ADDON_DESCRIPTIONS } from '@/lib/types'
+import ReviewsSlider from '@/components/ReviewsSlider'
 
 export default function HomePage() {
   return (
@@ -284,6 +285,22 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── REVIEWS ───────────────────────────────────────────── */}
+      <section className="py-20 px-4">
+        <div className="max-w-lg mx-auto">
+          <div className="mb-8">
+            <p className="text-brand text-[11px] font-semibold uppercase tracking-[0.22em] mb-2">
+              Google Reviews
+            </p>
+            <h2 className="font-display font-extrabold uppercase text-white leading-tight"
+                style={{ fontSize: 'clamp(2.2rem, 10vw, 3.5rem)' }}>
+              What Clients Say
+            </h2>
+          </div>
+          <ReviewsSlider />
+        </div>
+      </section>
+
       {/* ── SPECIAL JOBS ──────────────────────────────────────── */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
@@ -312,31 +329,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── PAYMENT METHODS ───────────────────────────────────── */}
-      <section className="py-16 px-4 bg-surface-1">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <p className="text-brand text-[11px] font-semibold uppercase tracking-[0.22em] mb-2">
-              Payment
-            </p>
-            <h2 className="font-display font-extrabold uppercase text-white leading-tight"
-                style={{ fontSize: 'clamp(2rem, 9vw, 3rem)' }}>
-              We Accept
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {['Cash', 'Venmo', 'Check', 'PayPal', 'Cash App', 'Apple Pay', 'Zelle'].map((method) => (
-              <span
-                key={method}
-                className="bg-surface-2 border border-white/[0.07] text-gray-300 text-sm font-medium px-4 py-2 rounded-xl"
-              >
-                {method}
-              </span>
-            ))}
-          </div>
-          <p className="text-gray-600 text-xs mt-4">Payment is due at the time of service.</p>
-        </div>
-      </section>
+
 
       {/* ── FINAL CTA ─────────────────────────────────────────── */}
       <section className="py-20 px-4">
