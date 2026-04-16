@@ -316,9 +316,6 @@ export default function AdminPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <p className="text-brand text-[11px] font-semibold uppercase tracking-[0.22em] mb-1">
-              Marlow&apos;s Detailing
-            </p>
             <h1 className="font-display font-extrabold uppercase text-white text-3xl leading-none">
               Admin Portal
             </h1>
