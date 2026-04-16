@@ -65,3 +65,8 @@ export async function sendConfirmationToClient(booking: Booking, approved: boole
 
   return sendSMS(booking.client_phone, message)
 }
+
+export async function sendCancellationToClient(booking: Booking) {
+  const message = `Hi ${booking.client_name}, we're sorry but your detail appointment on ${formatDate(booking.slot_date)} at ${formatTime(booking.slot_time)} has been cancelled. Please visit marlowsdetailing.com to rebook or call/text (832) 449-2025 with any questions. - Marlow's Detailing`
+  return sendSMS(booking.client_phone, message)
+}

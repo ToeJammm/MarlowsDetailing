@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendCancellationToClient } from '@/lib/twilio'
 
 export async function GET(req: NextRequest) {
   const pw = req.headers.get('x-admin-password')
@@ -50,10 +51,10 @@ export async function DELETE(req: NextRequest) {
 
   const supabase = createAdminClient()
 
-  // Grab the slot_date and slot_time before deleting
+  // Grab booking details before deleting
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
-    .select('slot_date, slot_time')
+    .select('slot_date, slot_time, client_name, client_phone, vehicle_type, services, addons')
     .eq('id', id)
     .single()
 
@@ -64,6 +65,13 @@ export async function DELETE(req: NextRequest) {
   // Delete the booking
   const { error: deleteError } = await supabase.from('bookings').delete().eq('id', id)
   if (deleteError) return NextResponse.json({ error: 'Failed to delete booking' }, { status: 500 })
+
+  // Text the client
+  try {
+    await sendCancellationToClient(booking as Parameters<typeof sendCancellationToClient>[0])
+  } catch (smsErr) {
+    console.error('Cancellation SMS failed:', smsErr)
+  }
 
   // Normalize to HH:MM:SS so it matches the TIME column in availability_slots
   const slotTime = booking.slot_time.length === 5
