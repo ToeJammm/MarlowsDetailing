@@ -68,6 +68,10 @@ export default function BookPage() {
 
   // Fetch available slots
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [step])
+
+  useEffect(() => {
     async function load() {
       setLoadingSlots(true)
       try {
@@ -198,7 +202,6 @@ export default function BookPage() {
       }
 
       setStep('success')
-      window.scrollTo({ top: 0, behavior: 'instant' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
