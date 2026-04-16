@@ -65,12 +65,13 @@ export async function DELETE(req: NextRequest) {
   const { error: deleteError } = await supabase.from('bookings').delete().eq('id', id)
   if (deleteError) return NextResponse.json({ error: 'Failed to delete booking' }, { status: 500 })
 
-  // Free the slot back up
+  // Free the slot back up — use like() to handle HH:MM vs HH:MM:SS mismatch
+  const slotTime = booking.slot_time.substring(0, 5)
   await supabase
     .from('availability_slots')
     .update({ is_booked: false, is_available: true })
     .eq('slot_date', booking.slot_date)
-    .eq('slot_time', booking.slot_time)
+    .like('slot_time', slotTime + '%')
 
   return NextResponse.json({ success: true })
 }
