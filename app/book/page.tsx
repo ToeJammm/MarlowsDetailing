@@ -198,6 +198,7 @@ export default function BookPage() {
       }
 
       setStep('success')
+      window.scrollTo({ top: 0, behavior: 'instant' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
