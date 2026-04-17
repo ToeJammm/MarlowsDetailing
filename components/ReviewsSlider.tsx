@@ -17,7 +17,7 @@ const REVIEWS = [
   {
     name: 'Greer Smyth',
     rating: 5,
-    text: 'Jake from Marlow\'s Mobile Detailing did an exceptional job on my 4Runner. Jake is a dedicated and hard worker who really puts effort into the small details that matter. He proceeded to detail my car even when it was pouring rain. I would highly recommend his services!',
+    text: 'Marlow from Marlow\'s Mobile Detailing did an exceptional job on my 4Runner. Marlow is a dedicated and hard worker who really puts effort into the small details that matter. He proceeded to detail my car even when it was pouring rain. I would highly recommend his services!',
   },
 ]
 
