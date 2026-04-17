@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-transparent via-brand to-transparent opacity-70" />
 
         {/* Content */}
-        <div className="relative z-10 px-6 pt-28 pb-16 w-full max-w-lg mx-auto sm:max-w-2xl">
+        <div className="relative z-10 px-6 pt-19 pb-16 w-full max-w-lg mx-auto sm:max-w-2xl">
           {/* Logo */}
           <div className="mb-3 animate-fade-up">
             <Image
