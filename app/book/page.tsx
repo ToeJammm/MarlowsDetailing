@@ -682,6 +682,11 @@ export default function BookPage() {
             </div>
           )}
 
+          {/* SMS opt-in notice */}
+          <p className="text-center text-gray-500 text-xs leading-relaxed px-2">
+            By submitting this request, you agree to receive SMS text messages from Marlow&apos;s Detailing regarding your booking confirmation, updates, and service status.
+          </p>
+
           {/* Submit */}
           <button
             type="submit"
