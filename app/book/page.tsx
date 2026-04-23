@@ -61,6 +61,7 @@ export default function BookPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [agreesDropoff, setAgreesDropoff] = useState(false)
+  const [agreesSms, setAgreesSms] = useState(false)
   const [photos, setPhotos] = useState<Record<string, File>>({})
 
   const today = startOfDay(new Date())
@@ -682,15 +683,23 @@ export default function BookPage() {
             </div>
           )}
 
-          {/* SMS opt-in notice */}
-          <p className="text-center text-gray-500 text-xs leading-relaxed px-2">
-            By submitting this request, you agree to receive SMS text messages from Marlow&apos;s Detailing regarding your booking confirmation, updates, and service status.
-          </p>
+          {/* SMS opt-in checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreesSms}
+              onChange={(e) => setAgreesSms(e.target.checked)}
+              className="mt-0.5 accent-brand w-4 h-4 shrink-0"
+            />
+            <span className="text-gray-400 text-xs leading-relaxed">
+              By submitting this request, I agree to receive SMS text messages from Marlow&apos;s Detailing regarding my booking confirmation, updates, and service status. <span className="text-brand">*</span>
+            </span>
+          </label>
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !agreesSms}
             className="w-full bg-brand hover:bg-brand-light disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-full transition-colors flex items-center justify-center gap-2 text-base"
           >
             {submitting ? (
