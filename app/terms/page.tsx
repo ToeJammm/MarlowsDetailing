@@ -51,7 +51,8 @@ export default function TermsPage() {
           <div>
             <h2 className="text-white font-bold text-lg mb-3">4. SMS Communications</h2>
             <p className="mb-3">
-              By submitting a booking request, you consent to receive SMS text messages from
+              SMS messaging consent is optional and is not required to complete a booking. If you
+              opt in during the booking process, you agree to receive SMS text messages from
               Marlow&apos;s Detailing at the phone number provided. These messages may include
               appointment confirmations, denials, and service-related follow-ups.
             </p>

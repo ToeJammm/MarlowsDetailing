@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   ChevronLeft,
   Car,
@@ -695,6 +696,13 @@ export default function BookPage() {
               (Optional) I would also like to receive SMS text messages from Marlow&apos;s Detailing with booking confirmations, updates, and service status. This is optional and not required to complete your booking request.
             </span>
           </label>
+          <p className="text-center text-gray-600 text-xs">
+            By booking you agree to our{' '}
+            <Link href="/terms" className="text-gray-500 hover:text-white underline transition-colors">Terms &amp; Conditions</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="text-gray-500 hover:text-white underline transition-colors">Privacy Policy</Link>
+            .
+          </p>
 
           {/* Submit */}
           <button

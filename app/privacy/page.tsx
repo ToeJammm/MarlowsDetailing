@@ -62,8 +62,9 @@ export default function PrivacyPage() {
           <div>
             <h2 className="text-white font-bold text-lg mb-3">4. SMS / Text Messaging</h2>
             <p className="mb-3">
-              By submitting a booking request, you consent to receive SMS text messages from
-              Marlow&apos;s Detailing at the phone number you provide. These messages will include:
+              When submitting a booking request, you may optionally consent to receive SMS text
+              messages from Marlow&apos;s Detailing at the phone number you provide. SMS consent is
+              not required to complete a booking. If you opt in, these messages may include:
             </p>
             <ul className="list-disc list-inside space-y-1 pl-2">
               <li>Appointment confirmation or denial notifications</li>
