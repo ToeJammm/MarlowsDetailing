@@ -62,7 +62,6 @@ export default function BookPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [agreesDropoff, setAgreesDropoff] = useState(false)
-  const [agreesSms, setAgreesSms] = useState(false)
   const [photos, setPhotos] = useState<Record<string, File>>({})
 
   const today = startOfDay(new Date())
@@ -221,7 +220,7 @@ export default function BookPage() {
           </div>
           <h1 className="text-3xl font-extrabold text-white mb-3">Request Received!</h1>
           <p className="text-gray-400 text-lg leading-relaxed mb-2">
-            Your booking request has been sent. You&apos;ll get a text once it&apos;s
+            Your booking request has been sent. You&apos;ll hear back once it&apos;s
             confirmed or denied — usually within a few hours.
           </p>
           {selectedSlot && (
@@ -684,18 +683,6 @@ export default function BookPage() {
             </div>
           )}
 
-          {/* SMS opt-in checkbox */}
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={agreesSms}
-              onChange={(e) => setAgreesSms(e.target.checked)}
-              className="mt-0.5 accent-brand w-4 h-4 shrink-0"
-            />
-            <span className="text-gray-400 text-xs leading-relaxed">
-              (Optional) I would also like to receive SMS text messages from Marlow&apos;s Detailing with booking confirmations, updates, and service status. This is optional and not required to complete your booking request.
-            </span>
-          </label>
           <p className="text-center text-gray-600 text-xs">
             By booking you agree to our{' '}
             <Link href="/terms" className="text-gray-500 hover:text-white underline transition-colors">Terms &amp; Conditions</Link>
@@ -719,7 +706,7 @@ export default function BookPage() {
             )}
           </button>
           <p className="text-center text-gray-600 text-xs">
-            You&apos;ll receive a text confirmation once your booking is approved.
+            You&apos;ll be contacted once your booking is approved or denied.
           </p>
         </form>
       </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendConfirmationToClient, sendSMS } from '@/lib/twilio'
+import { sendSMS } from '@/lib/twilio'
 import { formatDate, formatTime } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
@@ -76,13 +76,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Send SMS to client
-  try {
-    await sendConfirmationToClient(booking, newStatus === 'confirmed')
-  } catch (smsErr) {
-    console.error('Client SMS failed:', smsErr)
-  }
-
   // Confirm back to owner
   try {
     const verb = newStatus === 'confirmed' ? 'Approved' : 'Denied'
@@ -99,8 +92,8 @@ export async function GET(req: NextRequest) {
     successPage(
       approved ? 'Booking Approved!' : 'Booking Denied',
       approved
-        ? `You confirmed ${booking.client_name}'s appointment on ${formatDate(booking.slot_date)} at ${formatTime(booking.slot_time)}. They've been texted.`
-        : `You denied ${booking.client_name}'s appointment. The slot has been freed up and they've been notified.`,
+        ? `You confirmed ${booking.client_name}'s appointment on ${formatDate(booking.slot_date)} at ${formatTime(booking.slot_time)}. Remember to text them directly.`
+        : `You denied ${booking.client_name}'s appointment. The slot has been freed up. Remember to text them directly.`,
       approved
     ),
     { status: 200, headers: { 'Content-Type': 'text/html' } }
