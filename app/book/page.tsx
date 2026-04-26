@@ -692,14 +692,14 @@ export default function BookPage() {
               className="mt-0.5 accent-brand w-4 h-4 shrink-0"
             />
             <span className="text-gray-400 text-xs leading-relaxed">
-              By submitting this request, I agree to receive SMS text messages from Marlow&apos;s Detailing regarding my booking confirmation, updates, and service status. <span className="text-brand">*</span>
+              (Optional) I would also like to receive SMS text messages from Marlow&apos;s Detailing with booking confirmations, updates, and service status. This is optional and not required to complete your booking request.
             </span>
           </label>
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || !agreesSms}
+            disabled={submitting}
             className="w-full bg-brand hover:bg-brand-light disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-full transition-colors flex items-center justify-center gap-2 text-base"
           >
             {submitting ? (
