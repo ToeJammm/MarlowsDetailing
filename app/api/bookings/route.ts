@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendBookingNotification } from '@/lib/twilio'
-import { toE164 } from '@/lib/utils'
+import { toE164, isValidUSPhone } from '@/lib/utils'
 import type { BookingFormData } from '@/lib/types'
 
 export async function POST(req: NextRequest) {
@@ -25,6 +25,10 @@ export async function POST(req: NextRequest) {
       if (!body[field as keyof typeof body]) {
         return NextResponse.json({ error: `Missing field: ${field}` }, { status: 400 })
       }
+    }
+
+    if (!isValidUSPhone(body.client_phone)) {
+      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
     }
 
     if (body.has_water === null || body.has_power === null) {

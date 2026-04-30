@@ -118,6 +118,18 @@ export function formatPhone(phone: string): string {
   return phone
 }
 
+export function isValidUSPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '')
+  const ten = digits.length === 10 ? digits : digits.length === 11 && digits[0] === '1' ? digits.slice(1) : null
+  if (!ten) return false
+  const areaCode = ten.slice(0, 3)
+  const exchange = ten.slice(3, 6)
+  // Area code and exchange cannot start with 0 or 1 per NANP rules
+  if (areaCode[0] === '0' || areaCode[0] === '1') return false
+  if (exchange[0] === '0' || exchange[0] === '1') return false
+  return true
+}
+
 export function toE164(phone: string): string {
   const digits = phone.replace(/\D/g, '')
   if (digits.length === 10) return `+1${digits}`

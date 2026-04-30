@@ -11,7 +11,7 @@ import {
   Camera,
   X,
 } from 'lucide-react'
-import { cn, formatDate, formatDateShort, formatTime, calculateTotal, slotsNeeded, getRequiredSlots } from '@/lib/utils'
+import { cn, formatDate, formatDateShort, formatTime, calculateTotal, slotsNeeded, getRequiredSlots, isValidUSPhone } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import {
   PRICING,
@@ -129,6 +129,10 @@ export default function BookPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedSlot) return
+    if (!isValidUSPhone(form.client_phone)) {
+      setError('Please enter a valid US phone number.')
+      return
+    }
     if (!form.services.length) {
       setError('Please select at least one service.')
       return
