@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendCancellationToClient } from '@/lib/twilio'
 
 export async function GET(req: NextRequest) {
   const pw = req.headers.get('x-admin-password')
@@ -10,6 +9,20 @@ export async function GET(req: NextRequest) {
 
   const upcoming = req.nextUrl.searchParams.get('upcoming') === 'true'
   const supabase = createAdminClient()
+
+  const pending = req.nextUrl.searchParams.get('pending') === 'true'
+
+  if (pending) {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('id, slot_date, slot_time, client_name, client_phone, client_address, car_year, car_make, car_model, vehicle_type, dirt_rating, services, addons, has_water, has_power, message, photo_urls, status')
+      .eq('status', 'pending')
+      .order('slot_date', { ascending: true })
+      .order('slot_time', { ascending: true })
+
+    if (error) return NextResponse.json({ error: 'Failed to fetch pending bookings' }, { status: 500 })
+    return NextResponse.json({ bookings: data ?? [] })
+  }
 
   if (upcoming) {
     const today = new Date().toISOString().split('T')[0]
@@ -65,13 +78,6 @@ export async function DELETE(req: NextRequest) {
   // Delete the booking
   const { error: deleteError } = await supabase.from('bookings').delete().eq('id', id)
   if (deleteError) return NextResponse.json({ error: 'Failed to delete booking' }, { status: 500 })
-
-  // Text the client
-  try {
-    await sendCancellationToClient(booking as Parameters<typeof sendCancellationToClient>[0])
-  } catch (smsErr) {
-    console.error('Cancellation SMS failed:', smsErr)
-  }
 
   // Normalize to HH:MM:SS so it matches the TIME column in availability_slots
   const slotTime = booking.slot_time.length === 5

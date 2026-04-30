@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { addDays, format, startOfDay } from 'date-fns'
-import { Loader2, LogOut, Plus, Trash2, Lock, BarChart2, CalendarDays } from 'lucide-react'
+import { Loader2, LogOut, Plus, Trash2, Lock, BarChart2, CalendarDays, Inbox, CheckCircle2, XCircle, Phone, MapPin, Droplets, Zap } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -17,6 +17,27 @@ function normalizeSlot(slot: AvailabilitySlot): AvailabilitySlot {
 
 type WeekStat = { week: string; label: string; revenue: number; jobs: number }
 type StatsRange = '2w' | '1m' | '3m' | '6m' | '1y'
+type PendingBooking = {
+  id: string
+  slot_date: string
+  slot_time: string
+  client_name: string
+  client_phone: string
+  client_address: string
+  car_year: string | null
+  car_make: string
+  car_model: string
+  vehicle_type: VehicleType
+  dirt_rating: number
+  services: ServiceType[]
+  addons: AddonType[] | null
+  has_water: boolean
+  has_power: boolean
+  message: string | null
+  photo_urls: string[] | null
+  status: string
+}
+
 type RecentJob = {
   id: string
   slot_date: string
@@ -39,7 +60,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [savingSlot, setSavingSlot] = useState<string | null>(null)
-  const [tab, setTab] = useState<'schedule' | 'dashboard'>('schedule')
+  const [tab, setTab] = useState<'requests' | 'schedule' | 'dashboard'>('requests')
   const [stats, setStats] = useState<WeekStat[] | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [statsRange, setStatsRange] = useState<StatsRange>('2w')
@@ -50,6 +71,10 @@ export default function AdminPage() {
   const [upcomingLoading, setUpcomingLoading] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [pendingBookings, setPendingBookings] = useState<PendingBooking[] | null>(null)
+  const [pendingLoading, setPendingLoading] = useState(false)
+  const [confirmingBooking, setConfirmingBooking] = useState<string | null>(null)
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null)
 
   const today = startOfDay(new Date())
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
@@ -105,6 +130,22 @@ export default function AdminPage() {
     }
   }, [])
 
+  const fetchPending = useCallback(async (pw: string) => {
+    setPendingLoading(true)
+    try {
+      const res = await fetch('/api/admin/jobs?pending=true', {
+        headers: { 'x-admin-password': pw },
+      })
+      if (!res.ok) throw new Error()
+      const json = await res.json()
+      setPendingBookings(json.bookings ?? [])
+    } catch {
+      setPendingBookings([])
+    } finally {
+      setPendingLoading(false)
+    }
+  }, [])
+
   const fetchUpcoming = useCallback(async (pw: string) => {
     setUpcomingLoading(true)
     try {
@@ -139,6 +180,12 @@ export default function AdminPage() {
     }
   }, [authed, upcomingJobs, password, fetchUpcoming])
 
+  useEffect(() => {
+    if (authed && pendingBookings === null) {
+      fetchPending(password)
+    }
+  }, [authed, pendingBookings, password, fetchPending])
+
   async function savePrice(jobId: string) {
     const raw = editingPrice[jobId]
     const res = await fetch('/api/admin/jobs', {
@@ -156,6 +203,23 @@ export default function AdminPage() {
       )
       setEditingPrice((prev) => { const next = { ...prev }; delete next[jobId]; return next })
       fetchStats(password, statsRange)
+    }
+  }
+
+  async function handleBookingAction(bookingId: string, action: 'approve' | 'deny') {
+    setConfirmingBooking(bookingId)
+    try {
+      const res = await fetch('/api/admin/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ id: bookingId, action }),
+      })
+      if (res.ok) {
+        setPendingBookings((prev) => prev?.filter((b) => b.id !== bookingId) ?? null)
+        if (action === 'approve') fetchUpcoming(password)
+      }
+    } finally {
+      setConfirmingBooking(null)
     }
   }
 
@@ -331,6 +395,24 @@ export default function AdminPage() {
         {/* Tabs */}
         <div className="flex gap-1 bg-surface-2 border border-white/[0.07] rounded-xl p-1 mb-8 w-fit">
           <button
+            onClick={() => setTab('requests')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all',
+              tab === 'requests' ? 'bg-brand text-white' : 'text-gray-400 hover:text-white'
+            )}
+          >
+            <Inbox size={15} />
+            Requests
+            {pendingBookings && pendingBookings.length > 0 && (
+              <span className={cn(
+                'text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center',
+                tab === 'requests' ? 'bg-white text-brand' : 'bg-brand text-white'
+              )}>
+                {pendingBookings.length}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setTab('schedule')}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all',
@@ -349,6 +431,151 @@ export default function AdminPage() {
             <BarChart2 size={15} /> Dashboard
           </button>
         </div>
+
+        {/* ── REQUESTS TAB ─────────────────────────────────────────────────── */}
+        {tab === 'requests' && (
+          <>
+            {pendingLoading || pendingBookings === null ? (
+              <div className="flex items-center justify-center py-24">
+                <Loader2 size={24} className="animate-spin text-brand" />
+              </div>
+            ) : pendingBookings.length === 0 ? (
+              <div className="text-center py-24">
+                <Inbox size={32} className="text-gray-700 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm">No pending booking requests.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {pendingBookings.map((booking) => {
+                  const isActing = confirmingBooking === booking.id
+                  const estimatedTotal = calculateTotal(booking.vehicle_type, booking.services, booking.addons ?? [])
+                  return (
+                    <div key={booking.id} className="bg-surface-2 border border-white/[0.07] rounded-2xl overflow-hidden">
+                      {/* Header */}
+                      <div className="px-5 py-4 border-b border-white/[0.06] flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-white font-bold text-base">{booking.client_name}</p>
+                          <p className="text-brand text-sm font-medium mt-0.5">
+                            {formatDate(booking.slot_date)} · {formatTime(booking.slot_time)}
+                          </p>
+                        </div>
+                        <span className="bg-amber-500/15 text-amber-400 text-[10px] font-bold uppercase px-2 py-1 rounded-full shrink-0">
+                          Pending
+                        </span>
+                      </div>
+
+                      <div className="px-5 py-4 space-y-4">
+                        {/* Contact */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <a
+                            href={`tel:${booking.client_phone}`}
+                            className="flex items-center gap-2 bg-surface-1 border border-white/[0.06] rounded-xl px-3 py-2.5 hover:border-brand/40 transition-colors group"
+                          >
+                            <Phone size={14} className="text-brand shrink-0" />
+                            <span className="text-gray-300 text-sm group-hover:text-white transition-colors">{booking.client_phone}</span>
+                          </a>
+                          <div className="flex items-center gap-2 bg-surface-1 border border-white/[0.06] rounded-xl px-3 py-2.5">
+                            <MapPin size={14} className="text-brand shrink-0" />
+                            <span className="text-gray-300 text-sm truncate">{booking.client_address}</span>
+                          </div>
+                        </div>
+
+                        {/* Vehicle + services */}
+                        <div className="bg-surface-1 border border-white/[0.06] rounded-xl px-4 py-3 space-y-1.5">
+                          <p className="text-white text-sm font-semibold">
+                            {[booking.car_year, booking.car_make, booking.car_model].filter(Boolean).join(' ')}
+                            <span className="text-gray-500 font-normal ml-1.5 text-xs">
+                              ({booking.vehicle_type === 'sedan_coupe' ? 'Sedan / Coupe' : 'SUV / Truck'})
+                            </span>
+                          </p>
+                          <p className="text-gray-400 text-xs">{booking.services.join(', ')}{booking.addons?.length ? ` + ${booking.addons.join(', ')}` : ''}</p>
+                          <p className="text-brand text-xs font-semibold">Est. ${estimatedTotal}</p>
+                        </div>
+
+                        {/* Dirt rating + utilities */}
+                        <div className="flex flex-wrap gap-2">
+                          <span className="flex items-center gap-1.5 bg-surface-1 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-gray-400">
+                            Dirt level: <span className="text-white font-semibold ml-1">{booking.dirt_rating}/10</span>
+                          </span>
+                          <span className={cn(
+                            'flex items-center gap-1.5 border rounded-lg px-3 py-1.5 text-xs',
+                            booking.has_water ? 'bg-brand/5 border-brand/20 text-brand' : 'bg-red-500/5 border-red-500/20 text-red-400'
+                          )}>
+                            <Droplets size={11} /> Water: {booking.has_water ? 'Yes' : 'No'}
+                          </span>
+                          <span className={cn(
+                            'flex items-center gap-1.5 border rounded-lg px-3 py-1.5 text-xs',
+                            booking.has_power ? 'bg-brand/5 border-brand/20 text-brand' : 'bg-red-500/5 border-red-500/20 text-red-400'
+                          )}>
+                            <Zap size={11} /> Power: {booking.has_power ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+
+                        {/* Message */}
+                        {booking.message && (
+                          <div className="bg-surface-1 border border-white/[0.06] rounded-xl px-4 py-3">
+                            <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Note</p>
+                            <p className="text-gray-300 text-sm leading-relaxed">&ldquo;{booking.message}&rdquo;</p>
+                          </div>
+                        )}
+
+                        {/* Photos */}
+                        {booking.photo_urls && booking.photo_urls.length > 0 && (
+                          <div>
+                            <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-2">Photos</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {booking.photo_urls.map((url, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => setExpandedPhoto(url)}
+                                  className="aspect-square rounded-xl overflow-hidden border border-white/[0.07] hover:border-brand/40 transition-colors"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-3 pt-1">
+                          <button
+                            onClick={() => handleBookingAction(booking.id, 'approve')}
+                            disabled={isActing}
+                            className="flex-1 flex items-center justify-center gap-2 bg-brand/10 hover:bg-brand/20 border border-brand/30 hover:border-brand/50 text-brand font-semibold py-3 rounded-xl text-sm transition-all disabled:opacity-50"
+                          >
+                            {isActing ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => handleBookingAction(booking.id, 'deny')}
+                            disabled={isActing}
+                            className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 font-semibold py-3 rounded-xl text-sm transition-all disabled:opacity-50"
+                          >
+                            {isActing ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={15} />}
+                            Deny
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Expanded photo lightbox */}
+            {expandedPhoto && (
+              <div
+                className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+                onClick={() => setExpandedPhoto(null)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={expandedPhoto} alt="Vehicle photo" className="max-w-full max-h-full rounded-2xl object-contain" />
+              </div>
+            )}
+          </>
+        )}
 
         {/* ── SCHEDULE TAB ─────────────────────────────────────────────────── */}
         {tab === 'schedule' && (
