@@ -220,8 +220,8 @@ export default function BookPage() {
           </div>
           <h1 className="text-3xl font-extrabold text-white mb-3">Request Received!</h1>
           <p className="text-gray-400 text-lg leading-relaxed mb-2">
-            Your booking request has been sent. You&apos;ll hear back once it&apos;s
-            confirmed or denied — usually within a few hours.
+            Your booking request has been sent. You&apos;ll receive a text message
+            letting you know if it&apos;s been confirmed or denied — usually within a few hours.
           </p>
           {selectedSlot && (
             <p className="text-brand font-semibold text-sm mb-8">
@@ -706,7 +706,7 @@ export default function BookPage() {
             )}
           </button>
           <p className="text-center text-gray-600 text-xs">
-            You&apos;ll be contacted once your booking is approved or denied.
+            You&apos;ll receive a text letting you know if your booking is approved or denied.
           </p>
         </form>
       </div>
